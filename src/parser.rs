@@ -7,8 +7,9 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AST {
-    Base(Base),
     Alkane(u8),
+    Base(Base),
+    Isomer(Position, Base),
 
     FreeValence(Rc<AST>),
     Unsaturated(u8, Rc<AST>),
@@ -67,7 +68,18 @@ pub fn parse(name: &str) -> Rc<AST> {
             }
 
             Token::Base(base) => {
-                let molecule = AST::Base(base).into();
+                let molecule;
+                if base.has_isomers() {
+                    let &StackItem::Position(pos) = state.stack.last().unwrap() else {
+                        panic!("missing position for isomer: {base:?}, {state:?}");
+                    };
+                    state.stack.pop();
+
+                    molecule = AST::Isomer(pos, base).into();
+                } else {
+                    molecule = AST::Base(base).into();
+                }
+
                 state.stack.push(StackItem::Molecule(molecule));
             }
             Token::Prefix(base) => {
@@ -137,8 +149,8 @@ impl State {
 #[cfg(test)]
 mod tests {
     use crate::{
-        test::{DOPAMINE, SALBUTAMOL},
-        Base, Position,
+        test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
+        Base, Element, Position,
     };
 
     use super::{parse, AST};
@@ -281,6 +293,53 @@ mod tests {
                         )
                         .into(),
                         AST::Base(Base::Benzene).into(),
+                    )
+                    .into(),
+                )
+                .into(),
+            )
+            .into(),
+        );
+
+        assert_eq!(
+            parse(CAFFEINE),
+            AST::Substitution(
+                Position::Number(2),
+                AST::FreeValence(AST::Base(Base::Oxygen).into()).into(),
+                AST::Substitution(
+                    Position::Number(6),
+                    AST::FreeValence(AST::Base(Base::Oxygen).into()).into(),
+                    // 1,3,7-Trimethyl-3,7-dihydro-1H-purine
+                    AST::Substitution(
+                        Position::Number(1),
+                        AST::FreeValence(AST::Alkane(1).into()).into(),
+                        AST::Substitution(
+                            Position::Number(3),
+                            AST::FreeValence(AST::Alkane(1).into()).into(),
+                            AST::Substitution(
+                                Position::Number(7),
+                                AST::FreeValence(AST::Alkane(1).into()).into(),
+                                // 3,7-Dihydro-1H-purine
+                                AST::Substitution(
+                                    Position::Number(3),
+                                    AST::FreeValence(AST::Base(Base::Hydrogen).into()).into(),
+                                    AST::Substitution(
+                                        Position::Number(7),
+                                        AST::FreeValence(AST::Base(Base::Hydrogen).into()).into(),
+                                        // 1H-Purine
+                                        AST::Isomer(
+                                            Position::Element(1, Element::Hydrogen),
+                                            Base::Purine,
+                                        )
+                                        .into(),
+                                    )
+                                    .into(),
+                                )
+                                .into(),
+                            )
+                            .into(),
+                        )
+                        .into(),
                     )
                     .into(),
                 )

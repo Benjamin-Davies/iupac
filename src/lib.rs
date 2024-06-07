@@ -56,3 +56,9 @@ pub enum Position {
     Number(u8),
     Element(u8, Element),
 }
+
+impl Base {
+    pub fn has_isomers(&self) -> bool {
+        matches!(self, Base::Purine)
+    }
+}

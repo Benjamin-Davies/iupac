@@ -49,3 +49,10 @@ pub enum Element {
     Polonium,
     Astatine,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Position {
+    Unspecified,
+    Number(u8),
+    Element(u8, Element),
+}

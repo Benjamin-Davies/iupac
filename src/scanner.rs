@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-use crate::{dfa, Base, Element};
+use crate::{dfa, Base, Element, Position};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -10,7 +10,7 @@ pub enum Token {
     CloseBracket,
 
     /// "1-", "2-", "3-", "1H-", etc.
-    Position(u8, Option<Element>),
+    Position(Position),
     /// "mono", "di", "tri", etc. and "meth", "eth", "prop", "but"
     Multiple(u8),
     /// "ane", "ene", "yne"
@@ -156,14 +156,14 @@ impl<'input> Iterator for Scanner<'input> {
             let num = num.parse::<u8>().unwrap();
             self.input = rest;
 
-            let element = if let Some((len, &element)) = ELEMENTS.get_by_prefix(self.input) {
+            let pos = if let Some((len, &element)) = ELEMENTS.get_by_prefix(self.input) {
                 self.input = &self.input[len..];
-                Some(element)
+                Position::Element(num, element)
             } else {
-                None
+                Position::Number(num)
             };
 
-            return Some(Token::Position(num, element));
+            return Some(Token::Position(pos));
         }
 
         if let Some((len, token)) = TOKENS.get_by_prefix_ignore_case(self.input) {
@@ -187,7 +187,7 @@ impl<'input> Iterator for Scanner<'input> {
 mod tests {
     use crate::{
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
-        Base, Element,
+        Base, Element, Position,
     };
 
     use super::{scan, Token};
@@ -226,16 +226,16 @@ mod tests {
         assert_eq!(
             scan(DOPAMINE).collect::<Vec<_>>(),
             vec![
-                Token::Position(4, None),
+                Token::Position(Position::Number(4)),
                 Token::OpenBracket,
-                Token::Position(2, None),
+                Token::Position(Position::Number(2)),
                 Token::Prefix(Base::Ammonia),
                 Token::Multiple(2),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Base(Base::Benzene),
-                Token::Position(1, None),
-                Token::Position(2, None),
+                Token::Position(Position::Number(1)),
+                Token::Position(Position::Number(2)),
                 Token::Multiple(2),
                 Token::Suffix(Base::Water),
             ],
@@ -244,19 +244,19 @@ mod tests {
         assert_eq!(
             scan(SALBUTAMOL).collect::<Vec<_>>(),
             vec![
-                Token::Position(4, None),
+                Token::Position(Position::Number(4)),
                 Token::OpenBracket,
-                Token::Position(2, None),
+                Token::Position(Position::Number(2)),
                 Token::OpenBracket,
                 Token::Prefix(Base::Isobutane),
                 Token::Prefix(Base::Ammonia),
                 Token::CloseBracket,
-                Token::Position(1, None),
+                Token::Position(Position::Number(1)),
                 Token::Prefix(Base::Water),
                 Token::Multiple(2),
                 Token::FreeValence,
                 Token::CloseBracket,
-                Token::Position(2, None),
+                Token::Position(Position::Number(2)),
                 Token::OpenBracket,
                 Token::Prefix(Base::Water),
                 Token::Multiple(1),
@@ -270,20 +270,20 @@ mod tests {
         assert_eq!(
             scan(CAFFEINE).collect::<Vec<_>>(),
             vec![
-                Token::Position(1, None),
-                Token::Position(3, None),
-                Token::Position(7, None),
+                Token::Position(Position::Number(1)),
+                Token::Position(Position::Number(3)),
+                Token::Position(Position::Number(7)),
                 Token::Multiple(3),
                 Token::Multiple(1),
                 Token::FreeValence,
-                Token::Position(3, None),
-                Token::Position(7, None),
+                Token::Position(Position::Number(3)),
+                Token::Position(Position::Number(7)),
                 Token::Multiple(2),
                 Token::Prefix(Base::Hydrogen),
-                Token::Position(1, Some(Element::Hydrogen)),
+                Token::Position(Position::Element(1, Element::Hydrogen)),
                 Token::Base(Base::Purine),
-                Token::Position(2, None),
-                Token::Position(6, None),
+                Token::Position(Position::Number(2)),
+                Token::Position(Position::Number(6)),
                 Token::Multiple(2),
                 Token::Suffix(Base::Oxygen),
             ],

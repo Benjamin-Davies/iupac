@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     scanner::{scan, Token},
-    Base, Element,
+    Base, Position,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -12,7 +12,7 @@ pub enum AST {
 
     FreeValence(Rc<AST>),
     Unsaturated(u8, Rc<AST>),
-    Substitution(Option<u8>, Option<Element>, Rc<AST>, Rc<AST>),
+    Substitution(Position, Rc<AST>, Rc<AST>),
 }
 
 #[derive(Debug, Default)]
@@ -25,7 +25,7 @@ enum StackItem {
     Molecule(Rc<AST>),
 
     OpenBracket,
-    Position(u8, Option<Element>),
+    Position(Position),
     Multiple(u8),
 }
 
@@ -46,8 +46,8 @@ pub fn parse(name: &str) -> Rc<AST> {
                 state.stack.push(StackItem::Molecule(molecule));
             }
 
-            Token::Position(num, element) => {
-                state.stack.push(StackItem::Position(num, element));
+            Token::Position(pos) => {
+                state.stack.push(StackItem::Position(pos));
             }
             Token::Multiple(num) => {
                 state.stack.push(StackItem::Multiple(num));
@@ -81,8 +81,8 @@ pub fn parse(name: &str) -> Rc<AST> {
 
                 let positions = state.pop_multiplicity_and_positions().collect::<Vec<_>>();
                 let mut molecule = state.pop_molecule();
-                for (num, element) in positions {
-                    molecule = AST::Substitution(num, element, group.clone(), molecule).into();
+                for pos in positions {
+                    molecule = AST::Substitution(pos, group.clone(), molecule).into();
                 }
 
                 state.stack.push(StackItem::Molecule(molecule));
@@ -107,17 +107,15 @@ impl State {
             let group = group.clone();
             self.stack.pop();
 
-            for (num, element) in self.pop_multiplicity_and_positions() {
-                molecule = AST::Substitution(num, element, group.clone(), molecule).into();
+            for pos in self.pop_multiplicity_and_positions() {
+                molecule = AST::Substitution(pos, group.clone(), molecule).into();
             }
         }
 
         molecule
     }
 
-    fn pop_multiplicity_and_positions(
-        &mut self,
-    ) -> impl Iterator<Item = (Option<u8>, Option<Element>)> + '_ {
+    fn pop_multiplicity_and_positions(&mut self) -> impl Iterator<Item = Position> + '_ {
         let multiplicity = if let Some(&StackItem::Multiple(num)) = self.stack.last() {
             self.stack.pop();
             num
@@ -126,21 +124,18 @@ impl State {
         };
 
         (0..multiplicity).map(|_| {
-            let mut num = None;
-            let mut element = None;
-            if let Some(StackItem::Position(n, e)) = self.stack.pop() {
-                num = Some(n);
-                element = e;
-            };
-
-            (num, element)
+            if let Some(StackItem::Position(pos)) = self.stack.pop() {
+                pos
+            } else {
+                Position::Unspecified
+            }
         })
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{test::DOPAMINE, Base};
+    use crate::{test::DOPAMINE, Base, Position};
 
     use super::{parse, AST};
 
@@ -156,28 +151,22 @@ mod tests {
         assert_eq!(
             parse("Hexamethylpentane"),
             AST::Substitution(
-                None,
-                None,
+                Position::Unspecified,
                 AST::FreeValence(AST::Alkane(1).into()).into(),
                 AST::Substitution(
-                    None,
-                    None,
+                    Position::Unspecified,
                     AST::FreeValence(AST::Alkane(1).into()).into(),
                     AST::Substitution(
-                        None,
-                        None,
+                        Position::Unspecified,
                         AST::FreeValence(AST::Alkane(1).into()).into(),
                         AST::Substitution(
-                            None,
-                            None,
+                            Position::Unspecified,
                             AST::FreeValence(AST::Alkane(1).into()).into(),
                             AST::Substitution(
-                                None,
-                                None,
+                                Position::Unspecified,
                                 AST::FreeValence(AST::Alkane(1).into()).into(),
                                 AST::Substitution(
-                                    None,
-                                    None,
+                                    Position::Unspecified,
                                     AST::FreeValence(AST::Alkane(1).into()).into(),
                                     AST::Alkane(5).into(),
                                 )
@@ -197,12 +186,10 @@ mod tests {
         assert_eq!(
             parse("2,2-Dimethylpropane"),
             AST::Substitution(
-                Some(2),
-                None,
+                Position::Number(2),
                 AST::FreeValence(AST::Alkane(1).into()).into(),
                 AST::Substitution(
-                    Some(2),
-                    None,
+                    Position::Number(2),
                     AST::FreeValence(AST::Alkane(1).into()).into(),
                     AST::Alkane(3).into(),
                 )
@@ -222,20 +209,16 @@ mod tests {
         assert_eq!(
             parse(DOPAMINE),
             AST::Substitution(
-                Some(1),
-                None,
+                Position::Number(1),
                 AST::FreeValence(AST::Base(Base::Water).into()).into(),
                 AST::Substitution(
-                    Some(2),
-                    None,
+                    Position::Number(2),
                     AST::FreeValence(AST::Base(Base::Water).into()).into(),
                     AST::Substitution(
-                        Some(4),
-                        None,
+                        Position::Number(4),
                         AST::FreeValence(
                             AST::Substitution(
-                                Some(2),
-                                None,
+                                Position::Number(2),
                                 AST::FreeValence(AST::Base(Base::Ammonia).into()).into(),
                                 AST::Alkane(2).into(),
                             )

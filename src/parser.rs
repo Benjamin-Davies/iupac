@@ -120,7 +120,6 @@ pub fn parse(name: &str) -> Rc<AST> {
 
 impl State {
     fn pop_molecule(&mut self) -> Rc<AST> {
-        eprintln!("{:?}", self.stack);
         let mut molecule = match self.stack.pop().unwrap() {
             StackItem::Molecule(molecule) => molecule,
             StackItem::Multiple(num) => AST::Alkane(num).into(),

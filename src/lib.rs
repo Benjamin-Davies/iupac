@@ -1,4 +1,5 @@
 pub mod dfa;
+pub mod graph;
 pub mod parser;
 pub mod scanner;
 pub mod test;
@@ -61,5 +62,38 @@ pub enum Position {
 impl Base {
     pub fn has_isomers(&self) -> bool {
         matches!(self, Base::Purine)
+    }
+}
+
+impl Element {
+    fn symbol(&self) -> &'static str {
+        match self {
+            Element::Hydrogen => "H",
+            Element::Boron => "B",
+            Element::Carbon => "C",
+            Element::Nitrogen => "N",
+            Element::Oxygen => "O",
+            Element::Fluorine => "F",
+            Element::Aluminum => "Al",
+            Element::Silicon => "Si",
+            Element::Phosphorus => "P",
+            Element::Sulfur => "S",
+            Element::Chlorine => "Cl",
+            Element::Gallium => "Ga",
+            Element::Germanium => "Ge",
+            Element::Arsenic => "As",
+            Element::Selenium => "Se",
+            Element::Bromine => "Br",
+            Element::Indium => "In",
+            Element::Tin => "Sn",
+            Element::Antimony => "Sb",
+            Element::Tellurium => "Te",
+            Element::Iodine => "I",
+            Element::Thallium => "Tl",
+            Element::Lead => "Pb",
+            Element::Bismuth => "Bi",
+            Element::Polonium => "Po",
+            Element::Astatine => "At",
+        }
     }
 }

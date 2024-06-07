@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 
-use crate::dfa;
+use crate::{dfa, Base, Element};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -24,53 +24,6 @@ pub enum Token {
     Prefix(Base),
     /// A named base in suffix form: "hydroxy", "amine", etc.
     Suffix(Base),
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Base {
-    Hydrogen,
-    Oxygen,
-    Water,
-    Ammonia,
-    Isobutane,
-    Benzene,
-    Purine,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Element {
-    Hydrogen,
-
-    // P-11 SCOPE OF NOMENCLATURE FOR ORGANIC COMPOUNDS
-    Boron,
-    Carbon,
-    Nitrogen,
-    Oxygen,
-    Fluorine,
-
-    Aluminum,
-    Silicon,
-    Phosphorus,
-    Sulfur,
-    Chlorine,
-
-    Gallium,
-    Germanium,
-    Arsenic,
-    Selenium,
-    Bromine,
-
-    Indium,
-    Tin,
-    Antimony,
-    Tellurium,
-    Iodine,
-
-    Thallium,
-    Lead,
-    Bismuth,
-    Polonium,
-    Astatine,
 }
 
 lazy_static! {
@@ -233,11 +186,11 @@ impl<'input> Iterator for Scanner<'input> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        scanner::Element,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
+        Base, Element,
     };
 
-    use super::{scan, Base, Token};
+    use super::{scan, Token};
 
     #[test]
     fn test_scan_simple() {

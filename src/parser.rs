@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::scanner::{scan, Base, Element, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -5,9 +7,9 @@ pub enum Molecule {
     Base(Base),
     Alkane(u8),
 
-    FreeValence(Box<Molecule>),
-    Unsaturated(u8, Box<Molecule>),
-    Substitution(u8, Option<Element>, Box<Molecule>, Box<Molecule>),
+    FreeValence(Rc<Molecule>),
+    Unsaturated(u8, Rc<Molecule>),
+    Substitution(Option<u8>, Option<Element>, Rc<Molecule>, Rc<Molecule>),
 }
 
 #[derive(Debug, Default)]
@@ -69,10 +71,9 @@ impl State {
             _ => todo!(),
         };
 
-        while let Some(StackItem::Molecule(_)) = self.stack.last() {
-            let StackItem::Molecule(group) = self.stack.pop().unwrap() else {
-                unreachable!();
-            };
+        while let Some(StackItem::Molecule(group)) = self.stack.last() {
+            let group = group.clone();
+            self.stack.pop();
 
             let multiplicity = if let Some(&StackItem::Multiple(num)) = self.stack.last() {
                 self.stack.pop();
@@ -82,8 +83,11 @@ impl State {
             };
 
             for _ in 0..multiplicity {
-                let StackItem::Position(num, element) = self.stack.pop().unwrap() else {
-                    panic!("expected position, found {:?}", self);
+                let mut num = None;
+                let mut element = None;
+                if let Some(StackItem::Position(n, e)) = self.stack.pop() {
+                    num = Some(n);
+                    element = e;
                 };
 
                 molecule =
@@ -109,13 +113,53 @@ mod tests {
         );
 
         assert_eq!(
-            parse("2,2-Dimethylpropane"),
+            parse("Hexamethylpentane"),
             Molecule::Substitution(
-                2,
+                None,
                 None,
                 Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
                 Molecule::Substitution(
-                    2,
+                    None,
+                    None,
+                    Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
+                    Molecule::Substitution(
+                        None,
+                        None,
+                        Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
+                        Molecule::Substitution(
+                            None,
+                            None,
+                            Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
+                            Molecule::Substitution(
+                                None,
+                                None,
+                                Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
+                                Molecule::Substitution(
+                                    None,
+                                    None,
+                                    Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
+                                    Molecule::Alkane(5).into(),
+                                )
+                                .into(),
+                            )
+                            .into(),
+                        )
+                        .into(),
+                    )
+                    .into(),
+                )
+                .into(),
+            ),
+        );
+
+        assert_eq!(
+            parse("2,2-Dimethylpropane"),
+            Molecule::Substitution(
+                Some(2),
+                None,
+                Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
+                Molecule::Substitution(
+                    Some(2),
                     None,
                     Molecule::FreeValence(Molecule::Alkane(1).into()).into(),
                     Molecule::Alkane(3).into(),

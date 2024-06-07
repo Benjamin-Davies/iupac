@@ -232,7 +232,10 @@ impl<'input> Iterator for Scanner<'input> {
 
 #[cfg(test)]
 mod tests {
-    use crate::scanner::Element;
+    use crate::{
+        scanner::Element,
+        test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
+    };
 
     use super::{scan, Base, Token};
 
@@ -267,9 +270,8 @@ mod tests {
 
     #[test]
     fn test_scan_complex() {
-        // Dopamine
         assert_eq!(
-            scan("4-(2-Aminoethyl)benzene-1,2-diol").collect::<Vec<_>>(),
+            scan(DOPAMINE).collect::<Vec<_>>(),
             vec![
                 Token::Position(4, None),
                 Token::OpenBracket,
@@ -286,10 +288,8 @@ mod tests {
             ],
         );
 
-        // Salbutamol
         assert_eq!(
-            scan("4-[2-(tert-Butylamino)-1-hydroxyethyl]-2-(hydroxymethyl)phenol")
-                .collect::<Vec<_>>(),
+            scan(SALBUTAMOL).collect::<Vec<_>>(),
             vec![
                 Token::Position(4, None),
                 Token::OpenBracket,
@@ -314,9 +314,8 @@ mod tests {
             ],
         );
 
-        // Caffeine
         assert_eq!(
-            scan("1,3,7-Trimethyl-3,7-dihydro-1H-purine-2,6-dione").collect::<Vec<_>>(),
+            scan(CAFFEINE).collect::<Vec<_>>(),
             vec![
                 Token::Position(1, None),
                 Token::Position(3, None),

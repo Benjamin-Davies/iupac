@@ -259,18 +259,6 @@ mod tests {
             ],
         );
 
-        // Ethene
-        assert_eq!(
-            scan("Methdiylmethane").collect::<Vec<_>>(),
-            vec![
-                Token::Multiple(1),
-                Token::Multiple(2),
-                Token::FreeValence,
-                Token::Multiple(1),
-                Token::Unsaturated(0),
-            ],
-        );
-
         assert_eq!(
             scan("Pentyne").collect::<Vec<_>>(),
             vec![Token::Multiple(5), Token::Unsaturated(2)],

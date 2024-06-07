@@ -11,6 +11,7 @@ pub enum Base {
     Ammonia,
     Isobutane,
     Benzene,
+    Pyrimidine,
     Purine,
 }
 

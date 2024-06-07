@@ -67,6 +67,7 @@ lazy_static! {
         dfa.insert("ammonia", Token::Base(Base::Ammonia));
         dfa.insert("benzene", Token::Base(Base::Benzene));
         dfa.insert("phen", Token::Base(Base::Benzene));
+        dfa.insert("pyrimidin", Token::Base(Base::Pyrimidine));
         dfa.insert("purin", Token::Base(Base::Purine));
 
         dfa.insert("hydr", Token::Prefix(Base::Hydrogen));
@@ -77,6 +78,7 @@ lazy_static! {
 
         dfa.insert("one", Token::Suffix(Base::Oxygen));
         dfa.insert("ol", Token::Suffix(Base::Water));
+        dfa.insert("amine", Token::Suffix(Base::Ammonia));
 
         dfa
     };

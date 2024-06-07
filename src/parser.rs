@@ -38,13 +38,24 @@ pub fn parse(name: &str) -> Rc<AST> {
                 state.stack.push(StackItem::OpenBracket);
             }
             Token::CloseBracket => {
-                let molecule = state.pop_molecule();
-                assert_eq!(
-                    state.stack.pop(),
-                    Some(StackItem::OpenBracket),
-                    "unbalanced brackets: {state:?}\n{molecule:?}",
-                );
-                state.stack.push(StackItem::Molecule(molecule));
+                while matches!(state.stack.last(), Some(StackItem::Position(_))) {
+                    state.stack.pop();
+                    // TODO: handle isomers
+                    // In molecules such as Thymine, this token is used to
+                    // indicate which atoms receive hydrogen atoms.
+                }
+
+                if matches!(state.stack.last(), Some(StackItem::OpenBracket)) {
+                    state.stack.pop();
+                } else {
+                    let molecule = state.pop_molecule();
+                    assert_eq!(
+                        state.stack.pop(),
+                        Some(StackItem::OpenBracket),
+                        "unbalanced brackets: {state:?}\n{molecule:?}",
+                    );
+                    state.stack.push(StackItem::Molecule(molecule));
+                }
             }
 
             Token::Position(pos) => {
@@ -109,6 +120,7 @@ pub fn parse(name: &str) -> Rc<AST> {
 
 impl State {
     fn pop_molecule(&mut self) -> Rc<AST> {
+        eprintln!("{:?}", self.stack);
         let mut molecule = match self.stack.pop().unwrap() {
             StackItem::Molecule(molecule) => molecule,
             StackItem::Multiple(num) => AST::Alkane(num).into(),
@@ -149,7 +161,7 @@ impl State {
 #[cfg(test)]
 mod tests {
     use crate::{
-        test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
+        test::{ADENINE, CAFFEINE, CYTOSINE, DOPAMINE, GUANINE, SALBUTAMOL, THYMINE},
         Base, Element, Position,
     };
 
@@ -347,5 +359,13 @@ mod tests {
             )
             .into(),
         );
+    }
+
+    #[test]
+    fn test_parse_dna_bases() {
+        parse(ADENINE);
+        parse(THYMINE);
+        parse(CYTOSINE);
+        parse(GUANINE);
     }
 }

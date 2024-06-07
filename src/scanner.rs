@@ -237,7 +237,7 @@ mod tests {
     use super::{scan, Base, Token};
 
     #[test]
-    fn test_parse_simple() {
+    fn test_scan_simple() {
         assert_eq!(
             scan("Butane").collect::<Vec<_>>(),
             vec![Token::Multiple(4), Token::Unsaturated(0)],
@@ -266,7 +266,7 @@ mod tests {
     }
 
     #[test]
-    fn test_complex() {
+    fn test_scan_complex() {
         // Dopamine
         assert_eq!(
             scan("4-(2-Aminoethyl)benzene-1,2-diol").collect::<Vec<_>>(),

@@ -41,7 +41,7 @@ pub fn parse(name: &str) -> Rc<AST> {
                 assert_eq!(
                     state.stack.pop(),
                     Some(StackItem::OpenBracket),
-                    "unbalanced brackets"
+                    "unbalanced brackets: {state:?}\n{molecule:?}",
                 );
                 state.stack.push(StackItem::Molecule(molecule));
             }
@@ -91,7 +91,7 @@ pub fn parse(name: &str) -> Rc<AST> {
     }
 
     let molecule = state.pop_molecule();
-    assert!(state.stack.is_empty(), "unbalanced stack: {:?}", state);
+    assert!(state.stack.is_empty(), "unbalanced stack: {state:?}");
     molecule
 }
 
@@ -124,7 +124,8 @@ impl State {
         };
 
         (0..multiplicity).map(|_| {
-            if let Some(StackItem::Position(pos)) = self.stack.pop() {
+            if let Some(&StackItem::Position(pos)) = self.stack.last() {
+                self.stack.pop();
                 pos
             } else {
                 Position::Unspecified
@@ -135,7 +136,10 @@ impl State {
 
 #[cfg(test)]
 mod tests {
-    use crate::{test::DOPAMINE, Base, Position};
+    use crate::{
+        test::{DOPAMINE, SALBUTAMOL},
+        Base, Position,
+    };
 
     use super::{parse, AST};
 
@@ -221,6 +225,57 @@ mod tests {
                                 Position::Number(2),
                                 AST::FreeValence(AST::Base(Base::Ammonia).into()).into(),
                                 AST::Alkane(2).into(),
+                            )
+                            .into(),
+                        )
+                        .into(),
+                        AST::Base(Base::Benzene).into(),
+                    )
+                    .into(),
+                )
+                .into(),
+            )
+            .into(),
+        );
+
+        assert_eq!(
+            parse(SALBUTAMOL),
+            AST::Substitution(
+                Position::Unspecified,
+                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                AST::Substitution(
+                    Position::Number(4),
+                    // 2-(tert-Butylamino)-1-hydroxyethyl
+                    AST::FreeValence(
+                        AST::Substitution(
+                            Position::Number(2),
+                            // tert-Butylamino
+                            AST::Substitution(
+                                Position::Unspecified,
+                                AST::FreeValence(AST::Base(Base::Isobutane).into()).into(),
+                                AST::FreeValence(AST::Base(Base::Ammonia).into()).into(),
+                            )
+                            .into(),
+                            // 1-Hydroxyethane
+                            AST::Substitution(
+                                Position::Number(1),
+                                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                                AST::Alkane(2).into(),
+                            )
+                            .into(),
+                        )
+                        .into(),
+                    )
+                    .into(),
+                    // 2-(Hydroxymethyl)benzene
+                    AST::Substitution(
+                        Position::Number(2),
+                        AST::FreeValence(
+                            // Hydroxymethane
+                            AST::Substitution(
+                                Position::Unspecified,
+                                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                                AST::Alkane(1).into(),
                             )
                             .into(),
                         )

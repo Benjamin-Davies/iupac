@@ -126,6 +126,9 @@ pub struct Scanner<'input> {
 }
 
 pub fn scan(input: &str) -> Scanner {
+    // Trim common stereochemistry prefixes
+    let input = input.trim_start_matches("(RS)-");
+
     Scanner { input }
 }
 

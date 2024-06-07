@@ -15,7 +15,7 @@ pub struct Automaton<O> {
 struct State<O> {
     transitions: [Option<NonZeroUsize>; 16],
     parent: usize,
-    mappings: Vec<(&'static [u8], O)>,
+    mappings: Vec<(&'static str, O)>,
 }
 
 fn low_nibble(c: u8) -> usize {
@@ -28,9 +28,9 @@ impl<O> Automaton<O> {
     }
 
     /// `self.states` must not be empty
-    fn traverse(&self, input: &[u8]) -> usize {
+    fn traverse(&self, input: &str) -> usize {
         let mut cursor = 0;
-        for &byte in input {
+        for byte in input.bytes() {
             let nibble = low_nibble(byte);
             if let Some(next) = self.states[cursor].transitions[nibble] {
                 cursor = next.get() as usize;
@@ -41,13 +41,13 @@ impl<O> Automaton<O> {
         cursor
     }
 
-    fn traverse_or_create(&mut self, input: &[u8]) -> usize {
+    fn traverse_or_create(&mut self, input: &str) -> usize {
         if self.states.is_empty() {
             self.states.push(State::default());
         }
 
         let mut cursor = 0;
-        for &byte in input {
+        for byte in input.bytes() {
             let nibble = low_nibble(byte);
             if let Some(next) = self.states[cursor].transitions[nibble] {
                 cursor = next.get() as usize;
@@ -62,7 +62,7 @@ impl<O> Automaton<O> {
         cursor
     }
 
-    pub fn insert(&mut self, input: &'static [u8], output: O) {
+    pub fn insert(&mut self, input: &'static str, output: O) {
         let index = self.traverse_or_create(input);
         self.states[index].mappings.push((input, output));
     }
@@ -70,7 +70,7 @@ impl<O> Automaton<O> {
     /// Finds the longest matching prefix of `input`. If a match was found, then
     /// returns the length of the prefix that was matched and the output.
     /// Otherwise, returns None.
-    pub fn get_by_prefix(&self, input: &[u8]) -> Option<(usize, &O)> {
+    pub fn get_by_prefix(&self, input: &str) -> Option<(usize, &O)> {
         if self.states.is_empty() {
             return None;
         }
@@ -80,6 +80,30 @@ impl<O> Automaton<O> {
             let state = &self.states[cursor];
             for (prefix, output) in &state.mappings {
                 if input.starts_with(prefix) {
+                    return Some((prefix.len(), &output));
+                }
+            }
+
+            let next = state.parent;
+            if next == cursor {
+                return None;
+            }
+            cursor = next;
+        }
+    }
+
+    /// Like `get_by_prefix`, but ignores case.
+    pub fn get_by_prefix_ignore_case(&self, input: &str) -> Option<(usize, &O)> {
+        if self.states.is_empty() {
+            return None;
+        }
+
+        let mut cursor = self.traverse(input);
+        loop {
+            let state = &self.states[cursor];
+            for (prefix, output) in &state.mappings {
+                if input.len() >= prefix.len() && input[..prefix.len()].eq_ignore_ascii_case(prefix)
+                {
                     return Some((prefix.len(), &output));
                 }
             }
@@ -116,47 +140,47 @@ mod tests {
     #[test]
     fn test_get_by_prefix() {
         let mut automaton = Automaton::new();
-        automaton.insert(b"a", 0);
-        automaton.insert(b"aa", 1);
-        automaton.insert(b"ab", 2);
-        automaton.insert(b"abc", 3);
+        automaton.insert("a", 0);
+        automaton.insert("aa", 1);
+        automaton.insert("ab", 2);
+        automaton.insert("abc", 3);
 
-        assert_eq!(automaton.get_by_prefix(b""), None);
-        assert_eq!(automaton.get_by_prefix(b"a"), Some((1, &0)));
-        assert_eq!(automaton.get_by_prefix(b"aa"), Some((2, &1)));
-        assert_eq!(automaton.get_by_prefix(b"aaa"), Some((2, &1)));
-        assert_eq!(automaton.get_by_prefix(b"aba"), Some((2, &2)));
-        assert_eq!(automaton.get_by_prefix(b"abc"), Some((3, &3)));
+        assert_eq!(automaton.get_by_prefix(""), None);
+        assert_eq!(automaton.get_by_prefix("a"), Some((1, &0)));
+        assert_eq!(automaton.get_by_prefix("aa"), Some((2, &1)));
+        assert_eq!(automaton.get_by_prefix("aaa"), Some((2, &1)));
+        assert_eq!(automaton.get_by_prefix("aba"), Some((2, &2)));
+        assert_eq!(automaton.get_by_prefix("abc"), Some((3, &3)));
     }
 
     #[test]
     fn test_get_by_prefix_empty_automaton() {
         let automaton = Automaton::<()>::new();
 
-        assert_eq!(automaton.get_by_prefix(b"abc"), None);
+        assert_eq!(automaton.get_by_prefix("abc"), None);
     }
 
     #[test]
     fn test_get_by_prefix_matching_empty_input() {
         let mut automaton = Automaton::new();
-        automaton.insert(b"", 0);
-        automaton.insert(b"abc", 1);
+        automaton.insert("", 0);
+        automaton.insert("abc", 1);
 
-        assert_eq!(automaton.get_by_prefix(b""), Some((0, &0)));
-        assert_eq!(automaton.get_by_prefix(b"a"), Some((0, &0)));
-        assert_eq!(automaton.get_by_prefix(b"ab"), Some((0, &0)));
-        assert_eq!(automaton.get_by_prefix(b"abc"), Some((3, &1)));
+        assert_eq!(automaton.get_by_prefix(""), Some((0, &0)));
+        assert_eq!(automaton.get_by_prefix("a"), Some((0, &0)));
+        assert_eq!(automaton.get_by_prefix("a"), Some((0, &0)));
+        assert_eq!(automaton.get_by_prefix("abc"), Some((3, &1)));
     }
 
     #[test]
     fn test_chemistry_terms() {
         let mut automaton = Automaton::new();
-        automaton.insert(b"But", 0);
-        automaton.insert(b"Butyl", 1);
-        automaton.insert(b"Butane", 2);
+        automaton.insert("But", 0);
+        automaton.insert("Butyl", 1);
+        automaton.insert("Butane", 2);
 
-        assert_eq!(automaton.get_by_prefix(b"But"), Some((3, &0)));
-        assert_eq!(automaton.get_by_prefix(b"Butane"), Some((6, &2)));
-        assert_eq!(automaton.get_by_prefix(b"Butene"), Some((3, &0)));
+        assert_eq!(automaton.get_by_prefix("But"), Some((3, &0)));
+        assert_eq!(automaton.get_by_prefix("Butane"), Some((6, &2)));
+        assert_eq!(automaton.get_by_prefix("Butene"), Some((3, &0)));
     }
 }

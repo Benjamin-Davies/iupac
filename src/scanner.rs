@@ -78,52 +78,52 @@ lazy_static! {
         let mut dfa = dfa::Automaton::new();
         // Most vowel suffixes removed to avoid conflicts with "-ane", "-ol", etc.
 
-        dfa.insert(b"(", Token::OpenBracket);
-        dfa.insert(b"[", Token::OpenBracket);
-        dfa.insert(b")", Token::CloseBracket);
-        dfa.insert(b"]", Token::CloseBracket);
+        dfa.insert("(", Token::OpenBracket);
+        dfa.insert("[", Token::OpenBracket);
+        dfa.insert(")", Token::CloseBracket);
+        dfa.insert("]", Token::CloseBracket);
 
         // P-14.2 MULTIPLICATIVE PREFIXES
-        dfa.insert(b"mon", Token::Multiple(1));
-        dfa.insert(b"hen", Token::Multiple(1));
-        dfa.insert(b"di", Token::Multiple(2));
-        dfa.insert(b"do", Token::Multiple(2));
-        dfa.insert(b"tri", Token::Multiple(3));
-        dfa.insert(b"tetr", Token::Multiple(4));
-        dfa.insert(b"pent", Token::Multiple(5));
-        dfa.insert(b"hex", Token::Multiple(6));
-        dfa.insert(b"hept", Token::Multiple(7));
-        dfa.insert(b"oct", Token::Multiple(8));
-        dfa.insert(b"non", Token::Multiple(9));
-        dfa.insert(b"dec", Token::Multiple(10));
-        dfa.insert(b"undec", Token::Multiple(11));
+        dfa.insert("mon", Token::Multiple(1));
+        dfa.insert("hen", Token::Multiple(1));
+        dfa.insert("di", Token::Multiple(2));
+        dfa.insert("do", Token::Multiple(2));
+        dfa.insert("tri", Token::Multiple(3));
+        dfa.insert("tetr", Token::Multiple(4));
+        dfa.insert("pent", Token::Multiple(5));
+        dfa.insert("hex", Token::Multiple(6));
+        dfa.insert("hept", Token::Multiple(7));
+        dfa.insert("oct", Token::Multiple(8));
+        dfa.insert("non", Token::Multiple(9));
+        dfa.insert("dec", Token::Multiple(10));
+        dfa.insert("undec", Token::Multiple(11));
 
-        dfa.insert(b"meth", Token::Multiple(1));
-        dfa.insert(b"eth", Token::Multiple(2));
-        dfa.insert(b"prop", Token::Multiple(3));
-        dfa.insert(b"but", Token::Multiple(4));
+        dfa.insert("meth", Token::Multiple(1));
+        dfa.insert("eth", Token::Multiple(2));
+        dfa.insert("prop", Token::Multiple(3));
+        dfa.insert("but", Token::Multiple(4));
 
         // P-29.2 GENERAL METHODOLOGY FOR NAMING SUBSTITUENT GROUPS
-        dfa.insert(b"yl", Token::FreeValence);
+        dfa.insert("yl", Token::FreeValence);
 
-        dfa.insert(b"an", Token::Unsaturated(0));
-        dfa.insert(b"en", Token::Unsaturated(1));
-        dfa.insert(b"yn", Token::Unsaturated(2));
+        dfa.insert("an", Token::Unsaturated(0));
+        dfa.insert("en", Token::Unsaturated(1));
+        dfa.insert("yn", Token::Unsaturated(2));
 
-        dfa.insert(b"water", Token::Base(Base::Water));
-        dfa.insert(b"ammonia", Token::Base(Base::Ammonia));
-        dfa.insert(b"benzene", Token::Base(Base::Benzene));
-        dfa.insert(b"phen", Token::Base(Base::Benzene));
-        dfa.insert(b"purin", Token::Base(Base::Purine));
+        dfa.insert("water", Token::Base(Base::Water));
+        dfa.insert("ammonia", Token::Base(Base::Ammonia));
+        dfa.insert("benzene", Token::Base(Base::Benzene));
+        dfa.insert("phen", Token::Base(Base::Benzene));
+        dfa.insert("purin", Token::Base(Base::Purine));
 
-        dfa.insert(b"hydr", Token::Prefix(Base::Hydrogen));
-        dfa.insert(b"oxy", Token::Prefix(Base::Oxygen));
-        dfa.insert(b"hydroxy", Token::Prefix(Base::Water));
-        dfa.insert(b"amino", Token::Prefix(Base::Ammonia));
-        dfa.insert(b"tert-butyl", Token::Prefix(Base::Isobutane));
+        dfa.insert("hydr", Token::Prefix(Base::Hydrogen));
+        dfa.insert("oxy", Token::Prefix(Base::Oxygen));
+        dfa.insert("hydroxy", Token::Prefix(Base::Water));
+        dfa.insert("amino", Token::Prefix(Base::Ammonia));
+        dfa.insert("tert-butyl", Token::Prefix(Base::Isobutane));
 
-        dfa.insert(b"one", Token::Suffix(Base::Oxygen));
-        dfa.insert(b"ol", Token::Suffix(Base::Water));
+        dfa.insert("one", Token::Suffix(Base::Oxygen));
+        dfa.insert("ol", Token::Suffix(Base::Water));
 
         dfa
     };
@@ -131,37 +131,37 @@ lazy_static! {
     static ref ELEMENTS: dfa::Automaton<Element> = {
         let mut dfa = dfa::Automaton::new();
 
-        dfa.insert(b"H", Element::Hydrogen);
+        dfa.insert("H", Element::Hydrogen);
 
-        dfa.insert(b"B", Element::Boron);
-        dfa.insert(b"C", Element::Carbon);
-        dfa.insert(b"N", Element::Nitrogen);
-        dfa.insert(b"O", Element::Oxygen);
-        dfa.insert(b"F", Element::Fluorine);
+        dfa.insert("B", Element::Boron);
+        dfa.insert("C", Element::Carbon);
+        dfa.insert("N", Element::Nitrogen);
+        dfa.insert("O", Element::Oxygen);
+        dfa.insert("F", Element::Fluorine);
 
-        dfa.insert(b"Al", Element::Aluminum);
-        dfa.insert(b"Si", Element::Silicon);
-        dfa.insert(b"P", Element::Phosphorus);
-        dfa.insert(b"S", Element::Sulfur);
-        dfa.insert(b"Cl", Element::Chlorine);
+        dfa.insert("Al", Element::Aluminum);
+        dfa.insert("Si", Element::Silicon);
+        dfa.insert("P", Element::Phosphorus);
+        dfa.insert("S", Element::Sulfur);
+        dfa.insert("Cl", Element::Chlorine);
 
-        dfa.insert(b"Ga", Element::Gallium);
-        dfa.insert(b"Ge", Element::Germanium);
-        dfa.insert(b"As", Element::Arsenic);
-        dfa.insert(b"Se", Element::Selenium);
-        dfa.insert(b"Br", Element::Bromine);
+        dfa.insert("Ga", Element::Gallium);
+        dfa.insert("Ge", Element::Germanium);
+        dfa.insert("As", Element::Arsenic);
+        dfa.insert("Se", Element::Selenium);
+        dfa.insert("Br", Element::Bromine);
 
-        dfa.insert(b"In", Element::Indium);
-        dfa.insert(b"Sn", Element::Tin);
-        dfa.insert(b"Sb", Element::Antimony);
-        dfa.insert(b"Te", Element::Tellurium);
-        dfa.insert(b"I", Element::Iodine);
+        dfa.insert("In", Element::Indium);
+        dfa.insert("Sn", Element::Tin);
+        dfa.insert("S", Element::Antimony);
+        dfa.insert("Te", Element::Tellurium);
+        dfa.insert("I", Element::Iodine);
 
-        dfa.insert(b"Tl", Element::Thallium);
-        dfa.insert(b"Pb", Element::Lead);
-        dfa.insert(b"Bi", Element::Bismuth);
-        dfa.insert(b"Po", Element::Polonium);
-        dfa.insert(b"At", Element::Astatine);
+        dfa.insert("Tl", Element::Thallium);
+        dfa.insert("P", Element::Lead);
+        dfa.insert("Bi", Element::Bismuth);
+        dfa.insert("Po", Element::Polonium);
+        dfa.insert("At", Element::Astatine);
 
         dfa
     };
@@ -203,18 +203,17 @@ impl<'input> Iterator for Scanner<'input> {
             let num = num.parse::<u8>().unwrap();
             self.input = rest;
 
-            let element =
-                if let Some((len, &element)) = ELEMENTS.get_by_prefix(self.input.as_bytes()) {
-                    self.input = &self.input[len..];
-                    Some(element)
-                } else {
-                    None
-                };
+            let element = if let Some((len, &element)) = ELEMENTS.get_by_prefix(self.input) {
+                self.input = &self.input[len..];
+                Some(element)
+            } else {
+                None
+            };
 
             return Some(Token::Position(num, element));
         }
 
-        if let Some((len, token)) = TOKENS.get_by_prefix(self.input.as_bytes()) {
+        if let Some((len, token)) = TOKENS.get_by_prefix_ignore_case(self.input) {
             self.input = &self.input[len..];
             Some(*token)
         } else if let Some(rest) = self.input.strip_prefix(is_vowel) {
@@ -240,17 +239,17 @@ mod tests {
     #[test]
     fn test_parse_simple() {
         assert_eq!(
-            scan("butane").collect::<Vec<_>>(),
+            scan("Butane").collect::<Vec<_>>(),
             vec![Token::Multiple(4), Token::Unsaturated(0)],
         );
 
         assert_eq!(
-            scan("ethene").collect::<Vec<_>>(),
+            scan("Ethene").collect::<Vec<_>>(),
             vec![Token::Multiple(2), Token::Unsaturated(1)],
         );
 
         assert_eq!(
-            scan("hexamethylpentane").collect::<Vec<_>>(),
+            scan("Hexamethylpentane").collect::<Vec<_>>(),
             vec![
                 Token::Multiple(6),
                 Token::Multiple(1),
@@ -262,7 +261,7 @@ mod tests {
 
         // Ethene
         assert_eq!(
-            scan("methdiylmethane").collect::<Vec<_>>(),
+            scan("Methdiylmethane").collect::<Vec<_>>(),
             vec![
                 Token::Multiple(1),
                 Token::Multiple(2),
@@ -273,7 +272,7 @@ mod tests {
         );
 
         assert_eq!(
-            scan("pentyne").collect::<Vec<_>>(),
+            scan("Pentyne").collect::<Vec<_>>(),
             vec![Token::Multiple(5), Token::Unsaturated(2)],
         );
     }
@@ -282,7 +281,7 @@ mod tests {
     fn test_complex() {
         // Dopamine
         assert_eq!(
-            scan("4-(2-aminoethyl)benzene-1,2-diol").collect::<Vec<_>>(),
+            scan("4-(2-Aminoethyl)benzene-1,2-diol").collect::<Vec<_>>(),
             vec![
                 Token::Position(4, None),
                 Token::OpenBracket,
@@ -301,7 +300,7 @@ mod tests {
 
         // Salbutamol
         assert_eq!(
-            scan("4-[2-(tert-butylamino)-1-hydroxyethyl]-2-(hydroxymethyl)phenol")
+            scan("4-[2-(tert-Butylamino)-1-hydroxyethyl]-2-(hydroxymethyl)phenol")
                 .collect::<Vec<_>>(),
             vec![
                 Token::Position(4, None),
@@ -329,7 +328,7 @@ mod tests {
 
         // Caffeine
         assert_eq!(
-            scan("1,3,7-trimethyl-3,7-dihydro-1H-purine-2,6-dione").collect::<Vec<_>>(),
+            scan("1,3,7-Trimethyl-3,7-dihydro-1H-purine-2,6-dione").collect::<Vec<_>>(),
             vec![
                 Token::Position(1, None),
                 Token::Position(3, None),

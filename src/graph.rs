@@ -7,6 +7,7 @@ pub struct Graph {
     atoms: Vec<Element>,
     bonds: Vec<(usize, usize)>,
     positions: Vec<(Position, usize)>,
+    free_valences: Vec<usize>,
 }
 
 impl From<&AST> for Graph {
@@ -15,12 +16,20 @@ impl From<&AST> for Graph {
             &AST::Alkane(n) => alkane(n as usize),
             AST::Base(_) => todo!(),
             AST::Isomer(_, _) => todo!(),
-            AST::FreeValence(_) => todo!(),
+
+            &AST::FreeValence(ref base) => {
+                let base = Graph::from(&**base);
+                free_valence(base)
+            }
             &AST::Unsaturated(n, ref base) => {
                 let base = Graph::from(&**base);
                 unsaturate(n as usize, base)
             }
-            AST::Substitution(_, _, _) => todo!(),
+            &AST::Substitution(pos, ref group, ref base) => {
+                let group = Graph::from(&**group);
+                let base = Graph::from(&**base);
+                substitute(pos, group, base)
+            }
         }
     }
 }
@@ -39,7 +48,22 @@ pub fn alkane(n: usize) -> Graph {
             .chain([(0, 3 * n), (n - 1, 3 * n + 1)].iter().copied()) // End C-H bonds
             .collect(),
         positions: (0..n).map(|i| (Position::Number(i as u8 + 1), i)).collect(),
+        free_valences: Vec::new(),
     }
+}
+
+pub fn free_valence(base: Graph) -> Graph {
+    let mut molecule = base;
+    let &(_, i) = molecule.positions.first().unwrap();
+    let neighboring_hydrogen = molecule
+        .neighbors(i)
+        .filter(|&j| molecule.atoms[j] == Element::Hydrogen)
+        .next()
+        .unwrap();
+    molecule.remove_atom(neighboring_hydrogen);
+    molecule.free_valences.push(i);
+
+    molecule
 }
 
 pub fn unsaturate(n: usize, base: Graph) -> Graph {
@@ -59,7 +83,30 @@ pub fn unsaturate(n: usize, base: Graph) -> Graph {
     molecule
 }
 
+pub fn substitute(pos: Position, group: Graph, base: Graph) -> Graph {
+    let mut molecule = base.merge(group);
+
+    // Remove the hydrogen at the position
+    let &(_, i) = molecule.position(pos);
+    let neighboring_hydrogen = molecule
+        .neighbors(i)
+        .filter(|&j| molecule.atoms[j] == Element::Hydrogen)
+        .next()
+        .unwrap();
+    molecule.remove_atom(neighboring_hydrogen);
+
+    // Join the group to the base
+    let j = molecule.free_valences.pop().unwrap();
+    molecule.bonds.push((i, j));
+
+    molecule
+}
+
 impl Graph {
+    fn position(&self, pos: Position) -> &(Position, usize) {
+        self.positions.iter().find(|(p, _)| p == &pos).unwrap()
+    }
+
     fn neighbors(&self, i: usize) -> impl Iterator<Item = usize> + '_ {
         self.bonds.iter().filter_map(move |&(a, b)| {
             if a == i {
@@ -72,24 +119,61 @@ impl Graph {
         })
     }
 
+    fn merge(mut self, other: Graph) -> Self {
+        let offset = self.atoms.len();
+        self.atoms.extend(other.atoms);
+        self.bonds.extend(
+            other
+                .bonds
+                .into_iter()
+                .map(|(a, b)| (a + offset, b + offset)),
+        );
+        self.positions.extend(
+            other
+                .positions
+                .into_iter()
+                .map(|(pos, i)| (pos, i + offset)),
+        );
+        self.free_valences
+            .extend(other.free_valences.into_iter().map(|i| i + offset));
+
+        self
+    }
+
     fn remove_atom(&mut self, i: usize) {
         self.atoms.remove(i);
 
-        self.bonds.retain(|&(a, b)| a != i && b != i);
-        self.bonds.iter_mut().for_each(|(a, b)| {
+        self.bonds.retain_mut(|(a, b)| {
+            if *a == i || *b == i {
+                return false;
+            }
             if *a > i {
                 *a -= 1;
             }
             if *b > i {
                 *b -= 1;
             }
+            true
         });
 
-        self.positions.retain(|&(_, j)| j != i);
-        self.positions.iter_mut().for_each(|(_, j)| {
+        self.positions.retain_mut(|(_, j)| {
+            if *j == i {
+                return false;
+            }
             if *j > i {
                 *j -= 1;
             }
+            true
+        });
+
+        self.free_valences.retain_mut(|j| {
+            if *j == i {
+                return false;
+            }
+            if *j > i {
+                *j -= 1;
+            }
+            true
         });
     }
 }

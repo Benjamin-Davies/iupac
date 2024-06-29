@@ -1,6 +1,8 @@
 use std::fmt;
 
-use crate::{parser::AST, Element, Position};
+use crate::{parser::AST, Base, Element, Position};
+
+mod bases;
 
 #[derive(Debug, Default, Clone)]
 pub struct Graph {
@@ -14,7 +16,16 @@ impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
             &AST::Alkane(n) => alkane(n as usize),
-            AST::Base(_) => todo!(),
+            AST::Base(base) => match base {
+                Base::Hydrogen => todo!(),
+                Base::Oxygen => todo!(),
+                Base::Water => bases::water(),
+                Base::Ammonia => bases::ammonia(),
+                Base::Isobutane => bases::isobutane(),
+                Base::Benzene => bases::benzene(),
+                Base::Pyrimidine => todo!(),
+                Base::Purine => todo!(),
+            },
             AST::Isomer(_, _) => todo!(),
 
             &AST::FreeValence(ref base) => {
@@ -104,6 +115,9 @@ pub fn substitute(pos: Position, group: Graph, base: Graph) -> Graph {
 
 impl Graph {
     fn position(&self, pos: Position) -> &(Position, usize) {
+        if pos == Position::Unspecified {
+            return self.positions.first().unwrap();
+        }
         self.positions.iter().find(|(p, _)| p == &pos).unwrap()
     }
 
@@ -128,12 +142,7 @@ impl Graph {
                 .into_iter()
                 .map(|(a, b)| (a + offset, b + offset)),
         );
-        self.positions.extend(
-            other
-                .positions
-                .into_iter()
-                .map(|(pos, i)| (pos, i + offset)),
-        );
+        // Ignore positions of the added group
         self.free_valences
             .extend(other.free_valences.into_iter().map(|i| i + offset));
 

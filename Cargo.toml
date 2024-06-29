@@ -5,3 +5,8 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.4.0"
+
+[dependencies.bevy]
+version = "0.13.2"
+default-features = false
+features = ["bevy_winit", "bevy_ui", "wayland", "dynamic_linking"]

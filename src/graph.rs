@@ -6,10 +6,10 @@ mod bases;
 
 #[derive(Debug, Default, Clone)]
 pub struct Graph {
-    atoms: Vec<Element>,
-    bonds: Vec<(usize, usize)>,
-    positions: Vec<(Position, usize)>,
-    free_valences: Vec<usize>,
+    pub atoms: Vec<Element>,
+    pub bonds: Vec<(usize, usize)>,
+    pub positions: Vec<(Position, usize)>,
+    pub free_valences: Vec<usize>,
 }
 
 impl From<&AST> for Graph {

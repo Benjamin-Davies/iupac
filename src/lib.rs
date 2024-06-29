@@ -66,7 +66,7 @@ impl Base {
 }
 
 impl Element {
-    fn symbol(&self) -> &'static str {
+    pub fn symbol(&self) -> &'static str {
         match self {
             Element::Hydrogen => "H",
             Element::Boron => "B",

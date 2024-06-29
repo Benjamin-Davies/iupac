@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{parser::AST, Base, Element, Position};
+use crate::{parser::AST, Element, Position};
 
 mod bases;
 
@@ -16,17 +16,8 @@ impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
             &AST::Alkane(n) => alkane(n as usize),
-            AST::Base(base) => match base {
-                Base::Hydrogen => todo!(),
-                Base::Oxygen => todo!(),
-                Base::Water => bases::water(),
-                Base::Ammonia => bases::ammonia(),
-                Base::Isobutane => bases::isobutane(),
-                Base::Benzene => bases::benzene(),
-                Base::Pyrimidine => todo!(),
-                Base::Purine => todo!(),
-            },
-            AST::Isomer(_, _) => todo!(),
+            AST::Base(base) => bases::base(base, Position::Unspecified),
+            AST::Isomer(isomer, base) => bases::base(base, *isomer),
 
             &AST::FreeValence(ref base) => {
                 let base = Graph::from(&**base);
@@ -66,13 +57,18 @@ pub fn alkane(n: usize) -> Graph {
 pub fn free_valence(base: Graph) -> Graph {
     let mut molecule = base;
     let &(_, i) = molecule.positions.first().unwrap();
+
     let neighboring_hydrogen = molecule
         .neighbors(i)
-        .filter(|&j| molecule.atoms[j] == Element::Hydrogen)
-        .next()
-        .unwrap();
-    molecule.remove_atom(neighboring_hydrogen);
-    molecule.free_valences.push(i);
+        .find(|&j| molecule.atoms[j] == Element::Hydrogen);
+    if let Some(neighboring_hydrogen) = neighboring_hydrogen {
+        molecule.remove_atom(neighboring_hydrogen);
+        molecule.free_valences.push(i);
+    } else {
+        let neighbor = molecule.neighbors(i).next().unwrap();
+        molecule.remove_atom(neighbor);
+        molecule.free_valences.push(i);
+    }
 
     molecule
 }
@@ -101,10 +97,11 @@ pub fn substitute(pos: Position, group: Graph, base: Graph) -> Graph {
     let &(_, i) = molecule.position(pos);
     let neighboring_hydrogen = molecule
         .neighbors(i)
-        .filter(|&j| molecule.atoms[j] == Element::Hydrogen)
-        .next()
-        .unwrap();
-    molecule.remove_atom(neighboring_hydrogen);
+        .find(|&j| molecule.atoms[j] == Element::Hydrogen);
+    if let Some(neighboring_hydrogen) = neighboring_hydrogen {
+        molecule.remove_atom(neighboring_hydrogen);
+    }
+    // TODO: Also consider removing double/triple bonds
 
     // Join the group to the base
     let j = molecule.free_valences.pop().unwrap();

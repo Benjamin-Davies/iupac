@@ -200,11 +200,11 @@ impl fmt::Display for Graph {
 
         for (i, atom) in self.atoms.iter().enumerate() {
             let symbol = atom.symbol();
-            writeln!(f, "  {i} [label=\"{symbol}\", shape=none];")?;
+            writeln!(f, "    {i} [label=\"{symbol}\", shape=none];")?;
         }
 
         for &(a, b) in &self.bonds {
-            writeln!(f, "  {a} -- {b};")?;
+            writeln!(f, "    {a} -- {b};")?;
         }
 
         writeln!(f, "}}")?;

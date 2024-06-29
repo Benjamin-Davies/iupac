@@ -10,7 +10,7 @@ pub fn base(base: &Base, isomer: Position) -> Graph {
         Base::Ammonia => ammonia(),
         Base::Isobutane => isobutane(),
         Base::Benzene => benzene(),
-        Base::Pyrimidine => todo!(),
+        Base::Pyrimidine => pyrimidine(),
         Base::Purine => purine(isomer),
     }
 }
@@ -76,6 +76,28 @@ pub fn benzene() -> Graph {
     }
 }
 
+pub fn pyrimidine() -> Graph {
+    Graph {
+        atoms: [
+            Element::Nitrogen,
+            Element::Carbon,
+            Element::Nitrogen,
+            Element::Carbon,
+            Element::Carbon,
+            Element::Carbon,
+        ]
+        .into_iter()
+        .chain((0..4).map(|_| Element::Hydrogen))
+        .collect(),
+        bonds: (0..6)
+            .map(|i| (i, (i + 1) % 6))
+            .chain([(1, 6), (3, 7), (4, 8), (5, 9)])
+            .collect(),
+        positions: (0..6).map(|i| (Position::Number(i as u8 + 1), i)).collect(),
+        free_valences: vec![],
+    }
+}
+
 pub fn purine(isomer: Position) -> Graph {
     let mut graph = Graph {
         atoms: vec![
@@ -115,10 +137,10 @@ pub fn purine(isomer: Position) -> Graph {
     };
 
     // N-H bond
-    let Position::Element(i, Element::Hydrogen) = isomer else {
+    let Position::Element(n, Element::Hydrogen) = isomer else {
         panic!("Invalid purine isomer {isomer:?}");
     };
-    graph.bonds.push((i as usize - 1, 12));
+    graph.bonds.push((n as usize - 1, 12));
 
     graph
 }

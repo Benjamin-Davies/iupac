@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     scanner::{scan, Token},
-    Base, Position,
+    Base, Element, Position,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -38,11 +38,15 @@ pub fn parse(name: &str) -> Rc<AST> {
                 state.stack.push(StackItem::OpenBracket);
             }
             Token::CloseBracket => {
-                while matches!(state.stack.last(), Some(StackItem::Position(_))) {
+                let mut hydride_positions = Vec::new();
+                while let Some(&StackItem::Position(position)) = state.stack.last() {
                     state.stack.pop();
-                    // TODO: handle isomers
                     // In molecules such as Thymine, this token is used to
                     // indicate which atoms receive hydrogen atoms.
+                    let Position::Element(n, Element::Hydrogen) = position else {
+                        panic!("Unexpected position in brackets (expected a hydride marker): {position:?}")
+                    };
+                    hydride_positions.push(Position::Number(n));
                 }
 
                 if matches!(state.stack.last(), Some(StackItem::OpenBracket)) {
@@ -55,6 +59,25 @@ pub fn parse(name: &str) -> Rc<AST> {
                         "unbalanced brackets: {state:?}\n{molecule:?}",
                     );
                     state.stack.push(StackItem::Molecule(molecule));
+                }
+
+                if !hydride_positions.is_empty() {
+                    let StackItem::Molecule(molecule) = state
+                        .stack
+                        .iter_mut()
+                        .rfind(|i| matches!(i, StackItem::Molecule(_)))
+                        .unwrap()
+                    else {
+                        unreachable!()
+                    };
+                    for position in hydride_positions {
+                        *molecule = AST::Substitution(
+                            position,
+                            AST::FreeValence(AST::Base(Base::Hydrogen).into()).into(),
+                            molecule.clone(),
+                        )
+                        .into();
+                    }
                 }
             }
 

@@ -91,17 +91,26 @@ pub fn unsaturate(n: usize, base: Graph) -> Graph {
 }
 
 pub fn substitute(pos: Position, group: Graph, base: Graph) -> Graph {
+    let free_valence_count = if group.atoms.as_slice() == &[Element::Oxygen] {
+        2
+    } else {
+        group.free_valences.len()
+    };
+
     let mut molecule = base.merge(group);
 
     // Remove the hydrogen at the position
     let &(_, i) = molecule.position(pos);
-    let neighboring_hydrogen = molecule
-        .neighbors(i)
-        .find(|&j| molecule.atoms[j] == Element::Hydrogen);
-    if let Some(neighboring_hydrogen) = neighboring_hydrogen {
-        molecule.remove_atom(neighboring_hydrogen);
+    // Assumes that all hydrogens are at the end of the atom list
+    for _ in 0..free_valence_count {
+        let neighboring_hydrogen = molecule
+            .neighbors(i)
+            .find(|&j| molecule.atoms[j] == Element::Hydrogen);
+        if let Some(neighboring_hydrogen) = neighboring_hydrogen {
+            molecule.remove_atom(neighboring_hydrogen);
+        }
+        // TODO: Also consider removing double/triple bonds
     }
-    // TODO: Also consider removing double/triple bonds
 
     // Join the group to the base
     let j = molecule.free_valences.pop().unwrap();

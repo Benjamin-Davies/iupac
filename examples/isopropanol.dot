@@ -1,0 +1,26 @@
+// Compile using `neato`
+graph molecule {
+    0 [label="C", shape=none];
+    1 [label="C", shape=none];
+    2 [label="C", shape=none];
+    3 [label="H", shape=none];
+    4 [label="H", shape=none];
+    5 [label="H", shape=none];
+    6 [label="H", shape=none];
+    7 [label="H", shape=none];
+    8 [label="H", shape=none];
+    9 [label="H", shape=none];
+    10 [label="O", shape=none];
+    11 [label="H", shape=none];
+    0 -- 1;
+    1 -- 2;
+    0 -- 3;
+    0 -- 4;
+    1 -- 5;
+    2 -- 6;
+    2 -- 7;
+    0 -- 8;
+    2 -- 9;
+    10 -- 11;
+    1 -- 10;
+}

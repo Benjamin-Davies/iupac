@@ -1,3 +1,11 @@
+//! Generates a DOT file from an IUPAC name.
+//!
+//! # Usage
+//!
+//! ```sh
+//! cargo run --bin dot 'Propan-2-ol'
+//! ```
+
 use std::env;
 
 use iupac::{graph::Graph, parser::parse};

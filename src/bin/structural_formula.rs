@@ -18,6 +18,7 @@ const HYDROGEN_BOND_TARGET_LENGTH: f32 = 1.5 * FONT_SIZE;
 const BOND_TARGET_LENGTH: f32 = 2.0 * FONT_SIZE;
 const ATOM_REPULSION: f32 = 20.0;
 const BOND_REPULSION: f32 = 2000.0;
+const CENTER_PULL: f32 = 0.2;
 
 fn main() {
     App::new()
@@ -211,9 +212,10 @@ fn gradient_descent(
     }
     let cost = cost(&molecule.graph, &atom_positions, max_index);
 
-    let center = atom_positions.iter().sum::<Vec2>() / atom_positions.len() as f32;
-    for position in &mut atom_positions {
-        *position -= 0.5 * center;
+    let center = atom_positions.iter().take(max_index + 1).sum::<Vec2>()
+        / atom_positions.len().min(max_index + 1) as f32;
+    for position in atom_positions.iter_mut().take(max_index + 1) {
+        *position -= CENTER_PULL * center;
     }
 
     for (i, &entity) in molecule.atoms.iter().enumerate() {

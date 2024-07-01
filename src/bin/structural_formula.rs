@@ -10,12 +10,14 @@ use iupac::{graph::Graph, parser::parse, Element};
 
 const FONT_SIZE: f32 = 32.0;
 const BOND_DRAWING_EXCLUSION_RADIUS: f32 = 0.5 * FONT_SIZE;
-const ITER_PER_FIXED_UPDATE: usize = 10;
+const ITER_PER_FIXED_UPDATE: usize = 100;
 
-const STEP_SIZE: f32 = 0.05;
+const STEP_SIZE: f32 = 0.5;
 const BOND_STIFFNESS: f32 = 1.0;
-const BOND_TARGET_LENGTH: f32 = 1.5 * FONT_SIZE;
-const ATOM_REPULSION: f32 = 1000.0;
+const HYDROGEN_BOND_TARGET_LENGTH: f32 = 1.5 * FONT_SIZE;
+const BOND_TARGET_LENGTH: f32 = 2.0 * FONT_SIZE;
+const ATOM_REPULSION: f32 = 20.0;
+const BOND_REPULSION: f32 = 2000.0;
 
 fn main() {
     App::new()
@@ -211,7 +213,7 @@ fn gradient_descent(
 
     let center = atom_positions.iter().sum::<Vec2>() / atom_positions.len() as f32;
     for position in &mut atom_positions {
-        *position -= center;
+        *position -= 0.5 * center;
     }
 
     for (i, &entity) in molecule.atoms.iter().enumerate() {
@@ -256,7 +258,6 @@ fn place_new_atom(graph: &Graph, atom_positions: &[Vec2], new_i: usize, max_inde
     position + predictable_noise
 }
 
-#[allow(unused)]
 fn cost(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> f32 {
     // Model the cost as the potential energy of a mechanical system
     let mut energy = 0.0;
@@ -270,7 +271,13 @@ fn cost(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> f32 {
 
         let u_vec = atom_positions[j] - atom_positions[i];
         let u = u_vec.length();
-        let x = u - BOND_TARGET_LENGTH;
+        let target_length =
+            if graph.atoms[i] == Element::Hydrogen || graph.atoms[j] == Element::Hydrogen {
+                HYDROGEN_BOND_TARGET_LENGTH
+            } else {
+                BOND_TARGET_LENGTH
+            };
+        let x = u - target_length;
         energy += 0.5 * BOND_STIFFNESS * x.powi(2);
     }
 
@@ -287,6 +294,23 @@ fn cost(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> f32 {
         }
     }
 
+    // Model bonds as repelling charges
+    foreach_adjacent_bond_pair(graph, |(a, b), (c, d)| {
+        if a > max_index || b > max_index || c > max_index || d > max_index {
+            return;
+        }
+
+        let ab_center = 0.5 * (atom_positions[a] + atom_positions[b]);
+        let cd_center = 0.5 * (atom_positions[c] + atom_positions[d]);
+        let r_vec = cd_center - ab_center;
+        let r = r_vec.length();
+        if r <= f32::EPSILON {
+            return;
+        }
+
+        energy += BOND_REPULSION / r;
+    });
+
     energy
 }
 
@@ -301,7 +325,13 @@ fn cost_gradient(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> Ve
 
         let u_vec = atom_positions[j] - atom_positions[i];
         let u = u_vec.length();
-        let x = u - BOND_TARGET_LENGTH;
+        let target_length =
+            if graph.atoms[i] == Element::Hydrogen || graph.atoms[j] == Element::Hydrogen {
+                HYDROGEN_BOND_TARGET_LENGTH
+            } else {
+                BOND_TARGET_LENGTH
+            };
+        let x = u - target_length;
         let dx_by_du_vec = u_vec / u;
         let denergy_by_du_vec = BOND_STIFFNESS * x * dx_by_du_vec;
         energy_gradient[j] += denergy_by_du_vec;
@@ -323,5 +353,42 @@ fn cost_gradient(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> Ve
         }
     }
 
+    foreach_adjacent_bond_pair(graph, |(a, b), (c, d)| {
+        if a > max_index || b > max_index || c > max_index || d > max_index {
+            return;
+        }
+
+        let ab_center = 0.5 * (atom_positions[a] + atom_positions[b]);
+        let cd_center = 0.5 * (atom_positions[c] + atom_positions[d]);
+        let r_vec = cd_center - ab_center;
+        let r = r_vec.length();
+        let dr_by_dr_vec = r_vec / r;
+        if r <= f32::EPSILON {
+            return;
+        }
+
+        let denergy_by_dr_vec = -BOND_REPULSION / r.powi(2) * dr_by_dr_vec;
+        let denergy_by_dposition = 0.5 * denergy_by_dr_vec;
+        energy_gradient[a] -= denergy_by_dposition;
+        energy_gradient[b] -= denergy_by_dposition;
+        energy_gradient[c] += denergy_by_dposition;
+        energy_gradient[d] += denergy_by_dposition;
+    });
+
     energy_gradient
+}
+
+fn foreach_adjacent_bond_pair(
+    graph: &Graph,
+    mut callback: impl FnMut((usize, usize), (usize, usize)),
+) {
+    for i in 0..graph.bonds.len() {
+        for j in i + 1..graph.bonds.len() {
+            let (a, b) = graph.bonds[i];
+            let (c, d) = graph.bonds[j];
+            if a == c || a == d || b == c || b == d {
+                callback(graph.bonds[i], graph.bonds[j]);
+            }
+        }
+    }
 }

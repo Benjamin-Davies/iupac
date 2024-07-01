@@ -127,7 +127,7 @@ impl Graph {
         self.positions.iter().find(|(p, _)| p == &pos).unwrap()
     }
 
-    fn neighbors(&self, i: usize) -> impl Iterator<Item = usize> + '_ {
+    pub fn neighbors(&self, i: usize) -> impl Iterator<Item = usize> + '_ {
         self.bonds.iter().filter_map(move |&(a, b)| {
             if a == i {
                 Some(b)

@@ -1,4 +1,9 @@
-use std::{env, fs, path::PathBuf, process::Command};
+use std::{
+    env, fs,
+    path::PathBuf,
+    process::Command,
+    sync::atomic::{AtomicUsize, Ordering},
+};
 
 use bevy::prelude::*;
 use iupac::{graph::Graph, parser::parse, Element};
@@ -7,7 +12,7 @@ const FONT_SIZE: f32 = 32.0;
 const BOND_DRAWING_EXCLUSION_RADIUS: f32 = 0.5 * FONT_SIZE;
 const ITER_PER_FIXED_UPDATE: usize = 10;
 
-const STEP_SIZE: f32 = 0.2;
+const STEP_SIZE: f32 = 0.05;
 const BOND_STIFFNESS: f32 = 1.0;
 const BOND_TARGET_LENGTH: f32 = 1.5 * FONT_SIZE;
 const ATOM_REPULSION: f32 = 1000.0;
@@ -17,7 +22,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(ClearColor(Color::WHITE))
         .add_systems(Startup, setup)
-        .add_systems(Update, draw_bonds)
+        .add_systems(Update, draw)
         .add_systems(FixedUpdate, gradient_descent)
         .run();
 }
@@ -47,33 +52,14 @@ struct AtomBundle {
 }
 
 impl AtomBundle {
-    fn new(transform: Transform, element: Element, text_style: TextStyle) -> Self {
+    fn new(element: Element, text_style: TextStyle) -> Self {
         AtomBundle {
             text: Text2dBundle {
                 text: Text::from_section(element.symbol(), text_style)
                     .with_justify(JustifyText::Center),
-                transform,
                 ..Default::default()
             },
             atom: Atom,
-        }
-    }
-}
-
-#[derive(Component)]
-struct Bond {
-    atoms: [Entity; 2],
-}
-
-#[derive(Bundle)]
-struct BondBundle {
-    bond: Bond,
-}
-
-impl BondBundle {
-    fn new(atoms: [Entity; 2]) -> Self {
-        BondBundle {
-            bond: Bond { atoms },
         }
     }
 }
@@ -105,20 +91,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let graph = Graph::from(&*ast);
 
     let mut atoms = Vec::new();
-    for (i, &atom) in graph.atoms.iter().enumerate() {
-        let x = i as f32 * 20.0;
-        let y = if i % 2 == 0 { 0.0 } else { 20.0 };
-        let transform = Transform::from_translation(Vec3::new(x, y, 0.0));
+    for &atom in graph.atoms.iter() {
         let atom = commands
-            .spawn(AtomBundle::new(transform, atom, text_style.clone()))
+            .spawn(AtomBundle::new(atom, text_style.clone()))
             .id();
         atoms.push(atom);
-    }
-    let mut bonds = Vec::new();
-    for &(i, j) in &graph.bonds {
-        let atoms = [atoms[i], atoms[j]];
-        let bond = commands.spawn(BondBundle::new(atoms)).id();
-        bonds.push(bond);
     }
     commands
         .spawn(MoleculeBundle {
@@ -128,11 +105,15 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             ..Default::default()
         })
-        .push_children(&atoms)
-        .push_children(&bonds);
+        .push_children(&atoms);
 }
 
-fn draw_bonds(mut gizmos: Gizmos, bonds: Query<&Bond>, atoms_positions: Query<&Transform>) {
+fn draw(
+    mut gizmos: Gizmos,
+    molecule: Query<&Molecule>,
+    positions: Query<&Transform>,
+    mut visibilities: Query<&mut Visibility>,
+) {
     fn receed_endpoint(endpoint: &mut Vec2, other_endpoint: Vec2) {
         let displacement = other_endpoint - *endpoint;
         let distance = displacement.length();
@@ -141,16 +122,36 @@ fn draw_bonds(mut gizmos: Gizmos, bonds: Query<&Bond>, atoms_positions: Query<&T
         }
     }
 
-    for bond in &bonds {
-        let [a, b] = bond.atoms;
-        let mut a_position = atoms_positions.get(a).unwrap().translation.xy();
-        let mut b_position = atoms_positions.get(b).unwrap().translation.xy();
+    let molecule = molecule.single();
+    let max_i = LAST_SHOWN_ATOM.load(Ordering::SeqCst);
+
+    for bond in &molecule.graph.bonds {
+        let &(a, b) = bond;
+        if a > max_i || b > max_i {
+            continue;
+        }
+        let a = molecule.atoms[a];
+        let b = molecule.atoms[b];
+
+        let mut a_position = positions.get(a).unwrap().translation.xy();
+        let mut b_position = positions.get(b).unwrap().translation.xy();
         receed_endpoint(&mut a_position, b_position);
         receed_endpoint(&mut b_position, a_position);
 
         gizmos.line_2d(a_position, b_position, Color::BLACK);
     }
+
+    for (i, &atom) in molecule.atoms.iter().enumerate() {
+        let mut visibility = visibilities.get_mut(atom).unwrap();
+        if i <= max_i {
+            *visibility = Visibility::Inherited;
+        } else {
+            *visibility = Visibility::Hidden;
+        }
+    }
 }
+
+static LAST_SHOWN_ATOM: AtomicUsize = AtomicUsize::new(0);
 
 fn gradient_descent(
     molecule: Query<&Molecule>,
@@ -165,6 +166,17 @@ fn gradient_descent(
         .collect::<Vec<_>>();
 
     let max_index = time.elapsed_seconds() as usize;
+    LAST_SHOWN_ATOM.store(max_index, Ordering::SeqCst);
+
+    let start_of_index = max_index as f32;
+    let first_step_for_index = (time.elapsed_seconds() - start_of_index) < time.delta_seconds();
+    if first_step_for_index {
+        let new_i = max_index;
+        if new_i < atom_positions.len() {
+            atom_positions[new_i] =
+                place_new_atom(&molecule.graph, &atom_positions, new_i, max_index);
+        }
+    }
 
     for _ in 0..ITER_PER_FIXED_UPDATE {
         let cost_gradient = cost_gradient(&molecule.graph, &atom_positions, max_index);
@@ -183,6 +195,38 @@ fn gradient_descent(
         transform.translation.x = atom_positions[i].x;
         transform.translation.y = atom_positions[i].y;
     }
+}
+
+fn place_new_atom(graph: &Graph, atom_positions: &[Vec2], new_i: usize, max_index: usize) -> Vec2 {
+    let mut neighbor_position_sum = Vec2::ZERO;
+    let mut neighbor_count = 0.0;
+    let mut second_neighbor_position_sum = Vec2::ZERO;
+    let mut second_neighbor_count = 0.0;
+    for j in graph.neighbors(new_i) {
+        if j > max_index {
+            continue;
+        }
+        neighbor_position_sum += atom_positions[j];
+        neighbor_count += 1.0;
+        for k in graph.neighbors(j) {
+            if k > max_index || k == new_i {
+                continue;
+            }
+            second_neighbor_position_sum += atom_positions[k];
+            second_neighbor_count += 1.0;
+        }
+    }
+    let neighbor_mean = neighbor_position_sum / neighbor_count;
+    let second_neighbor_mean = second_neighbor_position_sum / second_neighbor_count;
+
+    let position = if !neighbor_mean.is_nan() && !second_neighbor_mean.is_nan() {
+        let seed_direction = neighbor_mean - second_neighbor_mean;
+        neighbor_mean + BOND_TARGET_LENGTH * seed_direction.normalize()
+    } else {
+        Vec2::ZERO
+    };
+    let predictable_noise = Vec2::from_angle(0.1 * new_i as f32);
+    position + predictable_noise
 }
 
 #[allow(unused)]
@@ -204,8 +248,8 @@ fn cost(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> f32 {
     }
 
     // Model atoms as repelling charges
-    for i in 0..atom_positions.len() {
-        for j in i + 1..atom_positions.len() {
+    for i in 0..graph.atoms.len() {
+        for j in i + 1..graph.atoms.len() {
             if i > max_index || j > max_index {
                 continue;
             }
@@ -237,8 +281,8 @@ fn cost_gradient(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> Ve
         energy_gradient[i] -= denergy_by_du_vec;
     }
 
-    for i in 0..atom_positions.len() {
-        for j in i + 1..atom_positions.len() {
+    for i in 0..graph.atoms.len() {
+        for j in i + 1..graph.atoms.len() {
             if i > max_index || j > max_index {
                 continue;
             }

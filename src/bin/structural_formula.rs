@@ -3,11 +3,21 @@ use std::{env, fs, path::PathBuf, process::Command};
 use bevy::prelude::*;
 use iupac::{graph::Graph, parser::parse, Element};
 
+const FONT_SIZE: f32 = 32.0;
+const BOND_DRAWING_EXCLUSION_RADIUS: f32 = 0.5 * FONT_SIZE;
+const ITER_PER_FIXED_UPDATE: usize = 10;
+
+const STEP_SIZE: f32 = 0.2;
+const BOND_STIFFNESS: f32 = 1.0;
+const BOND_TARGET_LENGTH: f32 = 1.5 * FONT_SIZE;
+const ATOM_REPULSION: f32 = 1000.0;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .insert_resource(ClearColor(Color::WHITE))
         .add_systems(Startup, setup)
+        .add_systems(Update, draw_bonds)
         .add_systems(FixedUpdate, gradient_descent)
         .run();
 }
@@ -16,7 +26,6 @@ fn main() {
 struct Molecule {
     graph: Graph,
     atoms: Vec<Entity>,
-    bonds: Vec<Entity>,
 }
 
 #[derive(Bundle, Default)]
@@ -29,9 +38,7 @@ struct MoleculeBundle {
 }
 
 #[derive(Component)]
-struct Atom {
-    element: Element,
-}
+struct Atom;
 
 #[derive(Bundle)]
 struct AtomBundle {
@@ -48,7 +55,7 @@ impl AtomBundle {
                 transform,
                 ..Default::default()
             },
-            atom: Atom { element },
+            atom: Atom,
         }
     }
 }
@@ -61,7 +68,6 @@ struct Bond {
 #[derive(Bundle)]
 struct BondBundle {
     bond: Bond,
-    // TODO: draw gizmos
 }
 
 impl BondBundle {
@@ -88,7 +94,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let text_style = TextStyle {
         font: font.clone(),
-        font_size: 32.0,
+        font_size: FONT_SIZE,
         color: Color::BLACK,
     };
 
@@ -119,7 +125,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             molecule: Molecule {
                 graph,
                 atoms: atoms.clone(),
-                bonds: bonds.clone(),
             },
             ..Default::default()
         })
@@ -127,12 +132,31 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         .push_children(&bonds);
 }
 
-const STEP_SIZE: f32 = 0.1;
-const BOND_STIFFNESS: f32 = 1.0;
-const BOND_TARGET_LENGTH: f32 = 40.0;
-const ATOM_REPULSION: f32 = 100.0;
+fn draw_bonds(mut gizmos: Gizmos, bonds: Query<&Bond>, atoms_positions: Query<&Transform>) {
+    fn receed_endpoint(endpoint: &mut Vec2, other_endpoint: Vec2) {
+        let displacement = other_endpoint - *endpoint;
+        let distance = displacement.length();
+        if distance > BOND_DRAWING_EXCLUSION_RADIUS {
+            *endpoint += (displacement / distance) * BOND_DRAWING_EXCLUSION_RADIUS;
+        }
+    }
 
-fn gradient_descent(molecule: Query<&Molecule>, mut atoms: Query<(&Atom, &mut Transform)>) {
+    for bond in &bonds {
+        let [a, b] = bond.atoms;
+        let mut a_position = atoms_positions.get(a).unwrap().translation.xy();
+        let mut b_position = atoms_positions.get(b).unwrap().translation.xy();
+        receed_endpoint(&mut a_position, b_position);
+        receed_endpoint(&mut b_position, a_position);
+
+        gizmos.line_2d(a_position, b_position, Color::BLACK);
+    }
+}
+
+fn gradient_descent(
+    molecule: Query<&Molecule>,
+    mut atoms: Query<(&Atom, &mut Transform)>,
+    time: Res<Time>,
+) {
     let molecule = molecule.single();
     let mut atom_positions = molecule
         .atoms
@@ -140,9 +164,18 @@ fn gradient_descent(molecule: Query<&Molecule>, mut atoms: Query<(&Atom, &mut Tr
         .map(|&e| atoms.get(e).unwrap().1.translation.xy())
         .collect::<Vec<_>>();
 
-    let cost_gradient = cost_gradient(&molecule.graph, &atom_positions);
-    for i in 0..atom_positions.len() {
-        atom_positions[i] -= STEP_SIZE * cost_gradient[i];
+    let max_index = time.elapsed_seconds() as usize;
+
+    for _ in 0..ITER_PER_FIXED_UPDATE {
+        let cost_gradient = cost_gradient(&molecule.graph, &atom_positions, max_index);
+        for i in 0..atom_positions.len() {
+            atom_positions[i] -= STEP_SIZE * cost_gradient[i];
+        }
+    }
+
+    let center = atom_positions.iter().sum::<Vec2>() / atom_positions.len() as f32;
+    for position in &mut atom_positions {
+        *position -= center;
     }
 
     for (i, &entity) in molecule.atoms.iter().enumerate() {
@@ -152,13 +185,18 @@ fn gradient_descent(molecule: Query<&Molecule>, mut atoms: Query<(&Atom, &mut Tr
     }
 }
 
-fn cost(graph: &Graph, atom_positions: &[Vec2]) -> f32 {
+#[allow(unused)]
+fn cost(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> f32 {
     // Model the cost as the potential energy of a mechanical system
     let mut energy = 0.0;
 
     // Model bonds as springs
     for bond in &graph.bonds {
         let &(i, j) = bond;
+        if i > max_index || j > max_index {
+            continue;
+        }
+
         let u_vec = atom_positions[j] - atom_positions[i];
         let u = u_vec.length();
         let x = u - BOND_TARGET_LENGTH;
@@ -168,6 +206,10 @@ fn cost(graph: &Graph, atom_positions: &[Vec2]) -> f32 {
     // Model atoms as repelling charges
     for i in 0..atom_positions.len() {
         for j in i + 1..atom_positions.len() {
+            if i > max_index || j > max_index {
+                continue;
+            }
+
             let r_vec = atom_positions[j] - atom_positions[i];
             let r = r_vec.length();
             energy += ATOM_REPULSION / r;
@@ -177,11 +219,15 @@ fn cost(graph: &Graph, atom_positions: &[Vec2]) -> f32 {
     energy
 }
 
-fn cost_gradient(graph: &Graph, atom_positions: &[Vec2]) -> Vec<Vec2> {
+fn cost_gradient(graph: &Graph, atom_positions: &[Vec2], max_index: usize) -> Vec<Vec2> {
     let mut energy_gradient = vec![Vec2::ZERO; atom_positions.len()];
 
     for bond in &graph.bonds {
         let &(i, j) = bond;
+        if i > max_index || j > max_index {
+            continue;
+        }
+
         let u_vec = atom_positions[j] - atom_positions[i];
         let u = u_vec.length();
         let x = u - BOND_TARGET_LENGTH;
@@ -193,6 +239,10 @@ fn cost_gradient(graph: &Graph, atom_positions: &[Vec2]) -> Vec<Vec2> {
 
     for i in 0..atom_positions.len() {
         for j in i + 1..atom_positions.len() {
+            if i > max_index || j > max_index {
+                continue;
+            }
+
             let r_vec = atom_positions[j] - atom_positions[i];
             let r = r_vec.length();
             let dr_by_dr_vec = r_vec / r;

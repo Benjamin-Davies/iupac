@@ -8,13 +8,16 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .insert_resource(ClearColor(Color::WHITE))
         .add_systems(Startup, setup)
-        .add_systems(FixedUpdate, bond_springs)
-        .add_systems(FixedUpdate, atomic_repulsion)
+        .add_systems(FixedUpdate, gradient_descent)
         .run();
 }
 
 #[derive(Component, Default)]
-struct Molecule;
+struct Molecule {
+    graph: Graph,
+    atoms: Vec<Entity>,
+    bonds: Vec<Entity>,
+}
 
 #[derive(Bundle, Default)]
 struct MoleculeBundle {
@@ -58,6 +61,7 @@ struct Bond {
 #[derive(Bundle)]
 struct BondBundle {
     bond: Bond,
+    // TODO: draw gizmos
 }
 
 impl BondBundle {
@@ -94,7 +98,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let ast = parse(&name);
     let graph = Graph::from(&*ast);
 
-    let molecule = commands.spawn(MoleculeBundle::default()).id();
     let mut atoms = Vec::new();
     for (i, &atom) in graph.atoms.iter().enumerate() {
         let x = i as f32 * 20.0;
@@ -102,65 +105,102 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         let transform = Transform::from_translation(Vec3::new(x, y, 0.0));
         let atom = commands
             .spawn(AtomBundle::new(transform, atom, text_style.clone()))
-            .set_parent(molecule)
             .id();
         atoms.push(atom);
     }
+    let mut bonds = Vec::new();
     for &(i, j) in &graph.bonds {
         let atoms = [atoms[i], atoms[j]];
-        commands.spawn(BondBundle::new(atoms)).set_parent(molecule);
+        let bond = commands.spawn(BondBundle::new(atoms)).id();
+        bonds.push(bond);
+    }
+    commands
+        .spawn(MoleculeBundle {
+            molecule: Molecule {
+                graph,
+                atoms: atoms.clone(),
+                bonds: bonds.clone(),
+            },
+            ..Default::default()
+        })
+        .push_children(&atoms)
+        .push_children(&bonds);
+}
+
+const STEP_SIZE: f32 = 0.1;
+const BOND_STIFFNESS: f32 = 1.0;
+const BOND_TARGET_LENGTH: f32 = 40.0;
+const ATOM_REPULSION: f32 = 100.0;
+
+fn gradient_descent(molecule: Query<&Molecule>, mut atoms: Query<(&Atom, &mut Transform)>) {
+    let molecule = molecule.single();
+    let mut atom_positions = molecule
+        .atoms
+        .iter()
+        .map(|&e| atoms.get(e).unwrap().1.translation.xy())
+        .collect::<Vec<_>>();
+
+    let cost_gradient = cost_gradient(&molecule.graph, &atom_positions);
+    for i in 0..atom_positions.len() {
+        atom_positions[i] -= STEP_SIZE * cost_gradient[i];
+    }
+
+    for (i, &entity) in molecule.atoms.iter().enumerate() {
+        let mut transform = atoms.get_mut(entity).unwrap().1;
+        transform.translation.x = atom_positions[i].x;
+        transform.translation.y = atom_positions[i].y;
     }
 }
 
-fn bond_springs(mut atoms: Query<(&Atom, &mut Transform)>, bonds: Query<&Bond>) {
-    let bond_length = 50.0;
-    let speed = 0.2;
+fn cost(graph: &Graph, atom_positions: &[Vec2]) -> f32 {
+    // Model the cost as the potential energy of a mechanical system
+    let mut energy = 0.0;
 
-    for bond in &bonds {
-        let [a, b] = bond.atoms;
-        let (_, a_transform) = atoms.get(a).unwrap();
-        let (_, b_transform) = atoms.get(b).unwrap();
-
-        let direction = b_transform.translation - a_transform.translation;
-        let distance = direction.length();
-        let target_distance = (1.0 - speed) * distance + speed * bond_length;
-        let delta = direction * (target_distance - distance) / distance / 2.0;
-
-        let (_, mut a_transform) = atoms.get_mut(a).unwrap();
-        a_transform.translation -= delta;
-        let (_, mut b_transform) = atoms.get_mut(b).unwrap();
-        b_transform.translation += delta;
+    // Model bonds as springs
+    for bond in &graph.bonds {
+        let &(i, j) = bond;
+        let u_vec = atom_positions[j] - atom_positions[i];
+        let u = u_vec.length();
+        let x = u - BOND_TARGET_LENGTH;
+        energy += 0.5 * BOND_STIFFNESS * x.powi(2);
     }
-}
 
-fn atomic_repulsion(atoms: Query<(&Atom, Entity)>, mut transforms: Query<&mut Transform>) {
-    let radius = 100.0;
-    let repulsion = 2.0;
-
-    for (atom_a, a) in &atoms {
-        for (atom_b, b) in &atoms {
-            if a == b {
-                continue;
-            }
-
-            let a_transform = transforms.get(a).unwrap();
-            let b_transform = transforms.get(b).unwrap();
-            let direction = b_transform.translation - a_transform.translation;
-            let distance = direction.length();
-            let delta = direction * repulsion / distance / distance;
-
-            if distance > radius {
-                continue;
-            }
-
-            if atom_a.element == Element::Hydrogen || atom_b.element != Element::Hydrogen {
-                let mut a_transform = transforms.get_mut(a).unwrap();
-                a_transform.translation -= delta;
-            }
-            if atom_b.element == Element::Hydrogen || atom_a.element != Element::Hydrogen {
-                let mut b_transform = transforms.get_mut(b).unwrap();
-                b_transform.translation += delta;
-            }
+    // Model atoms as repelling charges
+    for i in 0..atom_positions.len() {
+        for j in i + 1..atom_positions.len() {
+            let r_vec = atom_positions[j] - atom_positions[i];
+            let r = r_vec.length();
+            energy += ATOM_REPULSION / r;
         }
     }
+
+    energy
+}
+
+fn cost_gradient(graph: &Graph, atom_positions: &[Vec2]) -> Vec<Vec2> {
+    let mut energy_gradient = vec![Vec2::ZERO; atom_positions.len()];
+
+    for bond in &graph.bonds {
+        let &(i, j) = bond;
+        let u_vec = atom_positions[j] - atom_positions[i];
+        let u = u_vec.length();
+        let x = u - BOND_TARGET_LENGTH;
+        let dx_by_du_vec = u_vec / u;
+        let denergy_by_du_vec = BOND_STIFFNESS * x * dx_by_du_vec;
+        energy_gradient[j] += denergy_by_du_vec;
+        energy_gradient[i] -= denergy_by_du_vec;
+    }
+
+    for i in 0..atom_positions.len() {
+        for j in i + 1..atom_positions.len() {
+            let r_vec = atom_positions[j] - atom_positions[i];
+            let r = r_vec.length();
+            let dr_by_dr_vec = r_vec / r;
+            let denergy_by_dr_vec = -ATOM_REPULSION / r.powi(2) * dr_by_dr_vec;
+            energy_gradient[j] += denergy_by_dr_vec;
+            energy_gradient[i] -= denergy_by_dr_vec;
+        }
+    }
+
+    energy_gradient
 }

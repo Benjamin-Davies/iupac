@@ -64,6 +64,9 @@ impl AtomBundle {
     }
 }
 
+#[derive(Component)]
+struct CostText;
+
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font_path = PathBuf::from("assets/fonts/FiraSans-Bold.ttf");
     if !font_path.exists() {
@@ -106,6 +109,25 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..Default::default()
         })
         .push_children(&atoms);
+
+    commands.spawn((
+        CostText,
+        TextBundle::from_section(
+            "Cost: ...",
+            TextStyle {
+                font,
+                font_size: FONT_SIZE,
+                color: Color::BLACK,
+            },
+        )
+        .with_text_justify(JustifyText::Left)
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            top: Val::Px(5.0),
+            left: Val::Px(5.0),
+            ..default()
+        }),
+    ));
 }
 
 fn draw(
@@ -156,6 +178,7 @@ static LAST_SHOWN_ATOM: AtomicUsize = AtomicUsize::new(0);
 fn gradient_descent(
     molecule: Query<&Molecule>,
     mut atoms: Query<(&Atom, &mut Transform)>,
+    mut cost_text: Query<(&CostText, &mut Text)>,
     time: Res<Time>,
 ) {
     let molecule = molecule.single();
@@ -184,6 +207,7 @@ fn gradient_descent(
             atom_positions[i] -= STEP_SIZE * cost_gradient[i];
         }
     }
+    let cost = cost(&molecule.graph, &atom_positions, max_index);
 
     let center = atom_positions.iter().sum::<Vec2>() / atom_positions.len() as f32;
     for position in &mut atom_positions {
@@ -195,6 +219,9 @@ fn gradient_descent(
         transform.translation.x = atom_positions[i].x;
         transform.translation.y = atom_positions[i].y;
     }
+
+    let (_, mut cost_text) = cost_text.single_mut();
+    cost_text.sections[0].value = format!("Cost: {}", cost.round());
 }
 
 fn place_new_atom(graph: &Graph, atom_positions: &[Vec2], new_i: usize, max_index: usize) -> Vec2 {

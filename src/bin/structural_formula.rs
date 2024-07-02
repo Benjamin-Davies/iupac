@@ -1,7 +1,5 @@
 use std::{
-    env, fs,
-    path::PathBuf,
-    process::Command,
+    env,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
@@ -73,18 +71,6 @@ impl AtomBundle {
 struct CostText;
 
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let font_path = PathBuf::from("assets/fonts/FiraSans-Bold.ttf");
-    if !font_path.exists() {
-        fs::create_dir_all(font_path.parent().unwrap()).unwrap();
-        let font_url = "https://raw.githubusercontent.com/bevyengine/bevy/latest/assets/fonts/FiraSans-Bold.ttf";
-        Command::new("wget")
-            .arg("-O")
-            .arg(font_path)
-            .arg(font_url)
-            .status()
-            .unwrap();
-    }
-
     let font = asset_server.load("fonts/FiraSans-Bold.ttf");
     let text_style = TextStyle {
         font: font.clone(),
@@ -178,7 +164,7 @@ fn draw(
     }
 }
 
-static LAST_SHOWN_ATOM: AtomicUsize = AtomicUsize::new(0);
+static MAX_INDEX: AtomicUsize = AtomicUsize::new(0);
 
 fn gradient_descent(
     molecule: Query<&Molecule>,
@@ -195,7 +181,7 @@ fn gradient_descent(
         .collect::<Vec<_>>();
 
     let max_index = (time.elapsed_seconds() * ATOM_ADDITION_RATE) as usize;
-    LAST_SHOWN_ATOM.store(max_index, Ordering::SeqCst);
+    MAX_INDEX.store(max_index, Ordering::SeqCst);
 
     let start_of_index = max_index as f32 / ATOM_ADDITION_RATE;
     let first_step_for_index = (time.elapsed_seconds() - start_of_index) < time.delta_seconds();
@@ -400,7 +386,7 @@ fn foreach_adjacent_bond_pair(g: &Graph, mut callback: impl FnMut((usize, usize)
 }
 
 fn skip(g: &Graph, index: usize) -> bool {
-    let max_index = LAST_SHOWN_ATOM.load(Ordering::SeqCst);
+    let max_index = MAX_INDEX.load(Ordering::SeqCst);
     if index > max_index {
         return true;
     }

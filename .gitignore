@@ -1,6 +1,1 @@
 /target
-
-*.png
-!examples/*.png
-
-assets/

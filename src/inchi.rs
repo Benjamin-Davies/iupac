@@ -54,7 +54,7 @@ impl InChI {
             let mut new = self.clone();
             new.hydrogens.mobile_hydrogens = mobile_hydrogens.clone();
             new.hydrogens.immobile_hydrogens.push((vec![i..=i], 1));
-            if new.plausible() {
+            if new.is_plausible() {
                 new.collect_isomers(isomers);
             }
         }
@@ -62,7 +62,7 @@ impl InChI {
 
     /// Quickly checks if a compound is plausible by checking if the number of
     /// bonds for each atom is less than its standard valence.
-    fn plausible(&self) -> bool {
+    fn is_plausible(&self) -> bool {
         let atom_count = self
             .formula
             .atom_counts

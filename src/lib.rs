@@ -36,7 +36,7 @@ impl Base {
 }
 
 macro_rules! elements {
-    ($($symbol:ident $name:ident)*) => {
+    ($($symbol:ident $name:ident $period:literal $group:literal)*) => {
         paste! {
             #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
             pub enum Element {
@@ -51,6 +51,18 @@ macro_rules! elements {
                 pub fn symbol(&self) -> &'static str {
                     match self {
                         $(Element::[<$name:camel>] => stringify!($symbol),)*
+                    }
+                }
+
+                pub fn period(&self) -> u32 {
+                    match self {
+                        $(Element::[<$name:camel>] => $period,)*
+                    }
+                }
+
+                pub fn group(&self) -> u32 {
+                    match self {
+                        $(Element::[<$name:camel>] => $group,)*
                     }
                 }
             }
@@ -70,41 +82,53 @@ macro_rules! elements {
 }
 
 elements! {
-    H hydrogen
+    H   hydrogen    1   1
 
     // P-11 SCOPE OF NOMENCLATURE FOR ORGANIC COMPOUNDS
-    B boron
-    C carbon
-    N nitrogen
-    O oxygen
-    F fluorine
+    B   boron       2  13
+    C   carbon      2  14
+    N   nitrogen    2  15
+    O   oxygen      2  16
+    F   fluorine    2  17
 
-    Al aluminium
-    Si silicon
-    P phosphorus
-    S sulfur
-    Cl chlorine
+    Al  aluminium   3  13
+    Si  silicon     3  14
+    P   phosphorus  3  15
+    S   sulfur      3  16
+    Cl  chlorine    3  17
 
-    Ga gallium
-    Ge germanium
-    As arsenic
-    Se selenium
-    Br bromine
+    Ga  gallium     4  13
+    Ge  germanium   4  14
+    As  arsenic     4  15
+    Se  selenium    4  16
+    Br  bromine     4  17
 
-    In indium
-    Tl thallium
+    In  indium      5  13
+    Sn  tin         5  14
+    Sb  antimony    5  15
+    Te  tellurium   5  16
+    I   iodine      5  17
 
-    Sn tin
-    Pb lead
+    Tl  thallium    6  13
+    Pb  lead        6  14
+    Bi  bismuth     6  15
+    Po  polonium    6  16
+    At  astatine    6  17
+}
 
-    Sb antimony
-    Bi bismuth
-
-    Te tellurium
-    Po polonium
-
-    I iodine
-    At astatine
+impl Element {
+    // Private because this is a very naive way of generating these (i.e. a hack).
+    fn standard_valence(&self) -> u8 {
+        match self.group() {
+            1 => 1,
+            13 => 3,
+            14 => 4,
+            15 => 3,
+            16 => 2,
+            17 => 1,
+            _ => 0,
+        }
+    }
 }
 
 impl PartialOrd for Element {

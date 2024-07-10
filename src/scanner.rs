@@ -85,39 +85,9 @@ lazy_static! {
 
     static ref ELEMENTS: dfa::Automaton<Element> = {
         let mut dfa = dfa::Automaton::new();
-
-        dfa.insert("H", Element::Hydrogen);
-
-        dfa.insert("B", Element::Boron);
-        dfa.insert("C", Element::Carbon);
-        dfa.insert("N", Element::Nitrogen);
-        dfa.insert("O", Element::Oxygen);
-        dfa.insert("F", Element::Fluorine);
-
-        dfa.insert("Al", Element::Aluminum);
-        dfa.insert("Si", Element::Silicon);
-        dfa.insert("P", Element::Phosphorus);
-        dfa.insert("S", Element::Sulfur);
-        dfa.insert("Cl", Element::Chlorine);
-
-        dfa.insert("Ga", Element::Gallium);
-        dfa.insert("Ge", Element::Germanium);
-        dfa.insert("As", Element::Arsenic);
-        dfa.insert("Se", Element::Selenium);
-        dfa.insert("Br", Element::Bromine);
-
-        dfa.insert("In", Element::Indium);
-        dfa.insert("Sn", Element::Tin);
-        dfa.insert("S", Element::Antimony);
-        dfa.insert("Te", Element::Tellurium);
-        dfa.insert("I", Element::Iodine);
-
-        dfa.insert("Tl", Element::Thallium);
-        dfa.insert("P", Element::Lead);
-        dfa.insert("Bi", Element::Bismuth);
-        dfa.insert("Po", Element::Polonium);
-        dfa.insert("At", Element::Astatine);
-
+        for &element in crate::ELEMENTS {
+            dfa.insert(element.symbol(), element);
+        }
         dfa
     };
 }

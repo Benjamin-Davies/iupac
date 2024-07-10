@@ -195,16 +195,16 @@ impl Graph {
     }
 }
 
-impl From<&Graph> for UnGraph<&'static str, &'static str> {
+impl From<&Graph> for UnGraph<Element, ()> {
     fn from(graph: &Graph) -> Self {
         let mut ungraph = UnGraph::new_undirected();
         let mut nodes = Vec::new();
         for &atom in &graph.atoms {
-            let i = ungraph.add_node(atom.symbol());
+            let i = ungraph.add_node(atom);
             nodes.push(i);
         }
         for &(a, b) in &graph.bonds {
-            ungraph.add_edge(nodes[a], nodes[b], "");
+            ungraph.add_edge(nodes[a], nodes[b], ());
         }
         ungraph
     }

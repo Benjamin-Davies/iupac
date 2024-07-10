@@ -9,7 +9,7 @@ Parses IUPAC names and generates diagrams of the molecules. So far this only sup
 To generate diagrams using the built-in gradient-descent, run:
 
 ```sh
-cargo run --bin structural_formula '1,3,7-Trimethyl-3,7-dihydro-1H-purine-2,6-dione'
+cargo run --bin structural_formula -F bevy '1,3,7-Trimethyl-3,7-dihydro-1H-purine-2,6-dione'
 ```
 
 To generate diagrams using Graphviz, run:

@@ -1,5 +1,7 @@
 use std::fmt;
 
+use petgraph::graph::UnGraph;
+
 use crate::{parser::AST, Element, Position};
 
 mod bases;
@@ -190,6 +192,21 @@ impl Graph {
             }
             true
         });
+    }
+}
+
+impl From<&Graph> for UnGraph<&'static str, &'static str> {
+    fn from(graph: &Graph) -> Self {
+        let mut ungraph = UnGraph::new_undirected();
+        let mut nodes = Vec::new();
+        for &atom in &graph.atoms {
+            let i = ungraph.add_node(atom.symbol());
+            nodes.push(i);
+        }
+        for &(a, b) in &graph.bonds {
+            ungraph.add_edge(nodes[a], nodes[b], "");
+        }
+        ungraph
     }
 }
 

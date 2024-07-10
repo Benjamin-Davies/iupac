@@ -5,8 +5,20 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.4.0"
+reqwest = { version = "0.12.5", features = ["json", "blocking"] }
+
+# Versions are inferred from the reqwest version
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+url = "*"
 
 [dependencies.bevy]
 version = "0.13.2"
 default-features = false
-features = ["bevy_winit", "bevy_ui", "wayland", "dynamic_linking", "bevy_gizmos"]
+features = [
+    "bevy_winit",
+    "bevy_ui",
+    "wayland",
+    "dynamic_linking",
+    "bevy_gizmos",
+]

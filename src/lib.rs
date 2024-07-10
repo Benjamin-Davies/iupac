@@ -1,6 +1,7 @@
 pub mod dfa;
 pub mod graph;
 pub mod parser;
+pub mod pubchem;
 pub mod scanner;
 pub mod test;
 

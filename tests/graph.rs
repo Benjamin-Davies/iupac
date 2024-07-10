@@ -1,31 +1,39 @@
 use std::{fs, path::PathBuf, process::Command};
 
 use iupac::{graph::Graph, parser::parse};
+use paste::paste;
 use petgraph::{algo::is_isomorphic, graph::UnGraph};
 
 macro_rules! test_graph {
-    ($name:ident, $molecule:ident) => {
-        #[test]
-        fn $name() {
-            test_graph_impl(
-                &stringify!($molecule).to_lowercase(),
-                &iupac::test::$molecule,
-            );
+    ($name:ident) => {
+        paste! {
+            #[test]
+            fn [<test_ $name _graph>]() {
+                test_graph_impl(
+                    &stringify!($name),
+                    &iupac::test::[<$name:upper>],
+                );
+            }
         }
+    };
+    ($($name:ident,)*) => {
+        $(test_graph!($name);)*
     };
 }
 
-test_graph!(test_isopropanol_graph, ISOPROPANOL);
-test_graph!(test_isobutane_graph, ISOBUTANE);
-
-test_graph!(test_dopamine_graph, DOPAMINE);
-test_graph!(test_salbutamol_graph, SALBUTAMOL);
-test_graph!(test_caffeine_graph, CAFFEINE);
-
-test_graph!(test_adenine_graph, ADENINE);
-test_graph!(test_thymine_graph, THYMINE);
-test_graph!(test_cytosine_graph, CYTOSINE);
-test_graph!(test_guanine_graph, GUANINE);
+test_graph!(
+    isopropanol,
+    isobutane,
+    //
+    dopamine,
+    salbutamol,
+    caffeine,
+    //
+    adenine,
+    thymine,
+    cytosine,
+    guanine,
+);
 
 fn test_graph_impl(name: &str, iupac_name: &str) {
     let ast = parse(iupac_name);

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 lazy_static = "1.4.0"
+paste = "1.0.15"
 petgraph = { version = "0.6.5", features = ["serde-1"] }
 serde_json = "1.0.120"
 

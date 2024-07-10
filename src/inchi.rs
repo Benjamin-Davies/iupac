@@ -1,58 +1,75 @@
-use std::{collections::BTreeMap, str::FromStr};
+use std::{collections::BTreeMap, ops::RangeInclusive};
+
+use petgraph::graph::UnGraph;
 
 use crate::Element;
 
-#[derive(Default)]
+mod parser;
+mod scanner;
+
+#[derive(Debug, Default)]
 pub struct InChI {
     formula: Formula,
+    connections: Connections,
+    hydrogens: Hydrogens,
 }
 
-#[derive(Default)]
-pub struct Formula {
-    atom_counts: BTreeMap<Element, u32>,
+#[derive(Debug, Default)]
+struct Formula {
+    atom_counts: BTreeMap<Element, usize>,
 }
 
-impl FromStr for InChI {
-    type Err = &'static str;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts = s.split('/').peekable();
-
-        if parts.next() != Some("InChI=1S") {
-            return Err("String does not contain InChI prefix");
-        }
-
-        let mut formula = Formula::default();
-        if let Some(part) = parts.next() {
-            formula = part.parse()?;
-        }
-
-        Ok(Self { formula })
-    }
+#[derive(Debug, Default)]
+struct Connections {
+    connections: Vec<(usize, usize)>,
 }
 
-impl FromStr for Formula {
-    type Err = &'static str;
+#[derive(Debug, Default)]
+struct Hydrogens {
+    immobile_hydrogens: Vec<(Vec<RangeInclusive<usize>>, usize)>,
+    mobile_hydrogens: Vec<(usize, Vec<usize>)>,
+}
 
-    fn from_str(mut s: &str) -> Result<Self, Self::Err> {
-        let mut atom_counts = BTreeMap::new();
-        while !s.is_empty() {
-            let len = s.find(char::is_numeric).unwrap_or(s.len());
-            let element = s[..len].parse()?;
-            s = &s[len..];
+impl From<&InChI> for UnGraph<Element, ()> {
+    fn from(value: &InChI) -> Self {
+        let mut graph = UnGraph::new_undirected();
 
-            let len = s.find(char::is_alphabetic).unwrap_or(s.len());
-            let count;
-            if len == 0 {
-                count = 1;
-            } else {
-                count = s[..len].parse().map_err(|_| "Invalid count")?;
-                s = &s[len..];
+        let mut terminal_indices = Vec::new();
+        let mut skeletal_indices = Vec::new();
+        for (&element, &count) in &value.formula.atom_counts {
+            for _ in 0..count {
+                let node = graph.add_node(element);
+
+                if element == Element::Hydrogen {
+                    terminal_indices.push(node);
+                } else {
+                    skeletal_indices.push(node);
+                }
             }
-
-            atom_counts.insert(element, count);
         }
 
-        Ok(Self { atom_counts })
+        for &(i, j) in &value.connections.connections {
+            let a = skeletal_indices[i - 1];
+            let b = skeletal_indices[j - 1];
+            graph.add_edge(a, b, ());
+        }
+
+        let mut terminal_indices = terminal_indices.into_iter();
+        for (ranges, count) in &value.hydrogens.immobile_hydrogens {
+            for i in ranges.iter().cloned().flatten() {
+                dbg!(i, count);
+                let c = skeletal_indices[i - 1];
+                for _ in 0..*count {
+                    let h = terminal_indices.next().unwrap();
+                    graph.add_edge(c, h, ());
+                }
+            }
+        }
+
+        for _ in &value.hydrogens.mobile_hydrogens {
+            unimplemented!();
+        }
+
+        graph
     }
 }

@@ -19,7 +19,7 @@ impl From<&AST> for Graph {
             AST::Base(base) => bases::base(base, Position::Unspecified),
             AST::Isomer(isomer, base) => bases::base(base, *isomer),
 
-            &AST::FreeValence(ref base) => {
+            &AST::Group(ref base) => {
                 let base = Graph::from(&**base);
                 free_valence(base)
             }

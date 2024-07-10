@@ -11,7 +11,7 @@ pub enum AST {
     Base(Base),
     Isomer(Position, Base),
 
-    FreeValence(Rc<AST>),
+    Group(Rc<AST>),
     Unsaturated(u8, Rc<AST>),
     Substitution(Position, Rc<AST>, Rc<AST>),
 }
@@ -73,7 +73,7 @@ pub fn parse(name: &str) -> Rc<AST> {
                     for position in hydride_positions {
                         *molecule = AST::Substitution(
                             position,
-                            AST::FreeValence(AST::Base(Base::Hydrogen).into()).into(),
+                            AST::Group(AST::Base(Base::Hydrogen).into()).into(),
                             molecule.clone(),
                         )
                         .into();
@@ -97,7 +97,7 @@ pub fn parse(name: &str) -> Rc<AST> {
             }
             Token::FreeValence => {
                 let base = state.pop_molecule();
-                let molecule = AST::FreeValence(base).into();
+                let molecule = AST::Group(base).into();
                 state.stack.push(StackItem::Molecule(molecule));
             }
 
@@ -118,12 +118,12 @@ pub fn parse(name: &str) -> Rc<AST> {
             }
             Token::Prefix(base) => {
                 let base = AST::Base(base).into();
-                let group = AST::FreeValence(base).into();
+                let group = AST::Group(base).into();
                 state.stack.push(StackItem::Molecule(group));
             }
             Token::Suffix(base) => {
                 let base = AST::Base(base).into();
-                let group: Rc<_> = AST::FreeValence(base).into();
+                let group: Rc<_> = AST::Group(base).into();
 
                 let positions = state.pop_multiplicity_and_positions().collect::<Vec<_>>();
                 let mut molecule = state.pop_molecule();
@@ -202,22 +202,22 @@ mod tests {
             parse("Hexamethylpentane"),
             AST::Substitution(
                 Position::Unspecified,
-                AST::FreeValence(AST::Alkane(1).into()).into(),
+                AST::Group(AST::Alkane(1).into()).into(),
                 AST::Substitution(
                     Position::Unspecified,
-                    AST::FreeValence(AST::Alkane(1).into()).into(),
+                    AST::Group(AST::Alkane(1).into()).into(),
                     AST::Substitution(
                         Position::Unspecified,
-                        AST::FreeValence(AST::Alkane(1).into()).into(),
+                        AST::Group(AST::Alkane(1).into()).into(),
                         AST::Substitution(
                             Position::Unspecified,
-                            AST::FreeValence(AST::Alkane(1).into()).into(),
+                            AST::Group(AST::Alkane(1).into()).into(),
                             AST::Substitution(
                                 Position::Unspecified,
-                                AST::FreeValence(AST::Alkane(1).into()).into(),
+                                AST::Group(AST::Alkane(1).into()).into(),
                                 AST::Substitution(
                                     Position::Unspecified,
-                                    AST::FreeValence(AST::Alkane(1).into()).into(),
+                                    AST::Group(AST::Alkane(1).into()).into(),
                                     AST::Alkane(5).into(),
                                 )
                                 .into(),
@@ -237,10 +237,10 @@ mod tests {
             parse("2,2-Dimethylpropane"),
             AST::Substitution(
                 Position::Number(2),
-                AST::FreeValence(AST::Alkane(1).into()).into(),
+                AST::Group(AST::Alkane(1).into()).into(),
                 AST::Substitution(
                     Position::Number(2),
-                    AST::FreeValence(AST::Alkane(1).into()).into(),
+                    AST::Group(AST::Alkane(1).into()).into(),
                     AST::Alkane(3).into(),
                 )
                 .into(),
@@ -260,16 +260,16 @@ mod tests {
             parse(DOPAMINE),
             AST::Substitution(
                 Position::Number(1),
-                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                AST::Group(AST::Base(Base::Water).into()).into(),
                 AST::Substitution(
                     Position::Number(2),
-                    AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                    AST::Group(AST::Base(Base::Water).into()).into(),
                     AST::Substitution(
                         Position::Number(4),
-                        AST::FreeValence(
+                        AST::Group(
                             AST::Substitution(
                                 Position::Number(2),
-                                AST::FreeValence(AST::Base(Base::Ammonia).into()).into(),
+                                AST::Group(AST::Base(Base::Ammonia).into()).into(),
                                 AST::Alkane(2).into(),
                             )
                             .into(),
@@ -288,24 +288,24 @@ mod tests {
             parse(SALBUTAMOL),
             AST::Substitution(
                 Position::Unspecified,
-                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                AST::Group(AST::Base(Base::Water).into()).into(),
                 AST::Substitution(
                     Position::Number(4),
                     // 2-(tert-Butylamino)-1-hydroxyethyl
-                    AST::FreeValence(
+                    AST::Group(
                         AST::Substitution(
                             Position::Number(2),
                             // tert-Butylamino
                             AST::Substitution(
                                 Position::Unspecified,
-                                AST::FreeValence(AST::Base(Base::Isobutane).into()).into(),
-                                AST::FreeValence(AST::Base(Base::Ammonia).into()).into(),
+                                AST::Group(AST::Base(Base::Isobutane).into()).into(),
+                                AST::Group(AST::Base(Base::Ammonia).into()).into(),
                             )
                             .into(),
                             // 1-Hydroxyethane
                             AST::Substitution(
                                 Position::Number(1),
-                                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                                AST::Group(AST::Base(Base::Water).into()).into(),
                                 AST::Alkane(2).into(),
                             )
                             .into(),
@@ -316,11 +316,11 @@ mod tests {
                     // 2-(Hydroxymethyl)benzene
                     AST::Substitution(
                         Position::Number(2),
-                        AST::FreeValence(
+                        AST::Group(
                             // Hydroxymethane
                             AST::Substitution(
                                 Position::Unspecified,
-                                AST::FreeValence(AST::Base(Base::Water).into()).into(),
+                                AST::Group(AST::Base(Base::Water).into()).into(),
                                 AST::Alkane(1).into(),
                             )
                             .into(),
@@ -339,27 +339,27 @@ mod tests {
             parse(CAFFEINE),
             AST::Substitution(
                 Position::Number(2),
-                AST::FreeValence(AST::Base(Base::Oxygen).into()).into(),
+                AST::Group(AST::Base(Base::Oxygen).into()).into(),
                 AST::Substitution(
                     Position::Number(6),
-                    AST::FreeValence(AST::Base(Base::Oxygen).into()).into(),
+                    AST::Group(AST::Base(Base::Oxygen).into()).into(),
                     // 1,3,7-Trimethyl-3,7-dihydro-1H-purine
                     AST::Substitution(
                         Position::Number(1),
-                        AST::FreeValence(AST::Alkane(1).into()).into(),
+                        AST::Group(AST::Alkane(1).into()).into(),
                         AST::Substitution(
                             Position::Number(3),
-                            AST::FreeValence(AST::Alkane(1).into()).into(),
+                            AST::Group(AST::Alkane(1).into()).into(),
                             AST::Substitution(
                                 Position::Number(7),
-                                AST::FreeValence(AST::Alkane(1).into()).into(),
+                                AST::Group(AST::Alkane(1).into()).into(),
                                 // 3,7-Dihydro-1H-purine
                                 AST::Substitution(
                                     Position::Number(3),
-                                    AST::FreeValence(AST::Base(Base::Hydrogen).into()).into(),
+                                    AST::Group(AST::Base(Base::Hydrogen).into()).into(),
                                     AST::Substitution(
                                         Position::Number(7),
-                                        AST::FreeValence(AST::Base(Base::Hydrogen).into()).into(),
+                                        AST::Group(AST::Base(Base::Hydrogen).into()).into(),
                                         // 1H-Purine
                                         AST::Isomer(
                                             Position::Element(1, Element::Hydrogen),

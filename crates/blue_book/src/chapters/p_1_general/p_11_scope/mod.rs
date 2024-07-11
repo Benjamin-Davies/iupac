@@ -131,3 +131,30 @@ impl<'de> Deserialize<'de> for Element {
         Element::from_str(s).map_err(de::Error::custom)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Element;
+
+    #[test]
+    fn test_sort_elements() {
+        let mut elements = vec![
+            Element::Hydrogen,
+            Element::Oxygen,
+            Element::Nitrogen,
+            Element::Carbon,
+        ];
+
+        elements.sort();
+
+        assert_eq!(
+            elements,
+            vec![
+                Element::Carbon,
+                Element::Hydrogen,
+                Element::Nitrogen,
+                Element::Oxygen,
+            ]
+        );
+    }
+}

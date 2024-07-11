@@ -19,7 +19,7 @@ impl Plugin for MultiplicativePrefixesPlugin {
 
         dfa.insert("undec", Token::Multiplicity(11));
         dfa.insert("icos", Token::Multiplicity(20));
-        dfa.insert("acos", Token::Multiplicity(20));
+        dfa.insert("cos", Token::Multiplicity(20));
         dfa.insert("triacont", Token::Multiplicity(30));
         dfa.insert("tetracont", Token::Multiplicity(40));
         dfa.insert("pentacont", Token::Multiplicity(50));
@@ -64,5 +64,30 @@ impl parser::State {
             self.stack.pop();
         }
         n
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::parser::{parse, AST};
+
+    #[test]
+    fn test_parse_composite_prefix() {
+        for (n, prefix) in [
+            (14, "tetradeca"),
+            (21, "henicosa"),
+            (22, "docosa"),
+            (23, "tricosa"),
+            (24, "tetracosa"),
+            (41, "hentetraconta"),
+            (52, "dopentaconta"),
+            (111, "undecahecta"),
+            (363, "trihexacontatricta"),
+            (486, "hexaoctacontatetracta"),
+        ] {
+            let alkane = prefix.trim_end_matches('a').to_owned() + "ane";
+            let ast = parse(&alkane);
+            assert_eq!(*ast, AST::Alkane(n));
+        }
     }
 }

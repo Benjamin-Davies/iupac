@@ -2,7 +2,7 @@ use std::fmt;
 
 use petgraph::graph::UnGraph;
 
-use crate::{parser::AST, Element, Locant};
+use crate::{named_structure::NamedStructure, parser::AST, Element, Locant};
 
 mod bases;
 
@@ -18,6 +18,7 @@ impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
             &AST::Alkane(n) => alkane(n as usize),
+            AST::Structure(structure) => structure.to_graph(),
             AST::Base(base) => bases::base(base, Locant::Unspecified),
             AST::Isomer(isomer, base) => bases::base(base, *isomer),
 

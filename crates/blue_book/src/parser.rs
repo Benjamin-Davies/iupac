@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
+    named_structure::AnyNamedStructure,
     scanner::{scan, Token},
     Base, Element, Locant,
 };
@@ -8,6 +9,7 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AST {
     Alkane(u16),
+    Structure(AnyNamedStructure),
     Base(Base),
     Isomer(Locant, Base),
 
@@ -104,6 +106,10 @@ pub fn parse(name: &str) -> Rc<AST> {
                 state.stack.push(StackItem::Molecule(molecule));
             }
 
+            Token::Structure(structure) => {
+                let molecule = AST::Structure(structure).into();
+                state.stack.push(StackItem::Molecule(molecule));
+            }
             Token::Base(base) => {
                 let molecule;
                 if base.has_isomers() {
@@ -188,6 +194,8 @@ impl State {
 #[cfg(test)]
 mod tests {
     use crate::{
+        chapters::p_2_hydrides::p_21_simple_hydrides::p_21_1_mononuclear_hydrides::METHANE,
+        named_structure::NamedStructure,
         test::{ADENINE, CAFFEINE, CYTOSINE, DOPAMINE, GUANINE, SALBUTAMOL, THYMINE},
         Base, Element, Locant,
     };
@@ -207,22 +215,22 @@ mod tests {
             parse("Hexamethylpentane"),
             AST::Substitution(
                 Locant::Unspecified,
-                AST::Group(AST::Alkane(1).into()).into(),
+                AST::Group(METHANE.to_ast()).into(),
                 AST::Substitution(
                     Locant::Unspecified,
-                    AST::Group(AST::Alkane(1).into()).into(),
+                    AST::Group(METHANE.to_ast()).into(),
                     AST::Substitution(
                         Locant::Unspecified,
-                        AST::Group(AST::Alkane(1).into()).into(),
+                        AST::Group(METHANE.to_ast()).into(),
                         AST::Substitution(
                             Locant::Unspecified,
-                            AST::Group(AST::Alkane(1).into()).into(),
+                            AST::Group(METHANE.to_ast()).into(),
                             AST::Substitution(
                                 Locant::Unspecified,
-                                AST::Group(AST::Alkane(1).into()).into(),
+                                AST::Group(METHANE.to_ast()).into(),
                                 AST::Substitution(
                                     Locant::Unspecified,
-                                    AST::Group(AST::Alkane(1).into()).into(),
+                                    AST::Group(METHANE.to_ast()).into(),
                                     AST::Alkane(5).into(),
                                 )
                                 .into(),
@@ -242,10 +250,10 @@ mod tests {
             parse("2,2-Dimethylpropane"),
             AST::Substitution(
                 Locant::Number(2),
-                AST::Group(AST::Alkane(1).into()).into(),
+                AST::Group(METHANE.to_ast()).into(),
                 AST::Substitution(
                     Locant::Number(2),
-                    AST::Group(AST::Alkane(1).into()).into(),
+                    AST::Group(METHANE.to_ast()).into(),
                     AST::Alkane(3).into(),
                 )
                 .into(),
@@ -326,7 +334,7 @@ mod tests {
                             AST::Substitution(
                                 Locant::Unspecified,
                                 AST::Group(AST::Base(Base::Water).into()).into(),
-                                AST::Alkane(1).into(),
+                                METHANE.to_ast(),
                             )
                             .into(),
                         )
@@ -351,13 +359,13 @@ mod tests {
                     // 1,3,7-Trimethyl-3,7-dihydro-1H-purine
                     AST::Substitution(
                         Locant::Number(1),
-                        AST::Group(AST::Alkane(1).into()).into(),
+                        AST::Group(METHANE.to_ast()).into(),
                         AST::Substitution(
                             Locant::Number(3),
-                            AST::Group(AST::Alkane(1).into()).into(),
+                            AST::Group(METHANE.to_ast()).into(),
                             AST::Substitution(
                                 Locant::Number(7),
-                                AST::Group(AST::Alkane(1).into()).into(),
+                                AST::Group(METHANE.to_ast()).into(),
                                 // 3,7-Dihydro-1H-purine
                                 AST::Substitution(
                                     Locant::Number(3),

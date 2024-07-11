@@ -3,6 +3,7 @@ pub mod parser;
 pub mod test;
 
 mod chapters;
+mod named_structure;
 mod plugin;
 mod scanner;
 

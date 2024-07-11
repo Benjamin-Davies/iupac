@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 use parsing::dfa;
 
-use crate::{plugin::PLUGINS, Base, Element, Locant};
+use crate::{named_structure::AnyNamedStructure, plugin::PLUGINS, Base, Element, Locant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -22,6 +22,8 @@ pub enum Token {
     /// "yl"
     FreeValence,
 
+    /// A named structure: "borane", "methane", etc.
+    Structure(AnyNamedStructure),
     /// A named base: "water", "ammonia", etc.
     Base(Base),
     /// A named base in prefix form: "hydroxy", "amino", etc.
@@ -44,7 +46,6 @@ lazy_static! {
             plugin.init_tokens(&mut dfa);
         }
 
-        dfa.insert("meth", Token::Alkane(1));
         dfa.insert("eth", Token::Alkane(2));
         dfa.insert("prop", Token::Alkane(3));
         dfa.insert("but", Token::Alkane(4));
@@ -154,6 +155,8 @@ impl<'input> Iterator for Scanner<'input> {
 #[cfg(test)]
 mod tests {
     use crate::{
+        chapters::p_2_hydrides::p_21_simple_hydrides::p_21_1_mononuclear_hydrides::METHANE,
+        named_structure::NamedStructure,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
         Base, Element, Locant,
     };
@@ -176,7 +179,7 @@ mod tests {
             scan("Hexamethylpentane").collect::<Vec<_>>(),
             vec![
                 Token::Multiplicity(6),
-                Token::Alkane(1),
+                Token::Structure(METHANE.as_any()),
                 Token::FreeValence,
                 Token::Multiplicity(5),
                 Token::Unsaturated(0),
@@ -227,7 +230,7 @@ mod tests {
                 Token::Locant(Locant::Number(2)),
                 Token::OpenBracket,
                 Token::Prefix(Base::Water),
-                Token::Alkane(1),
+                Token::Structure(METHANE.as_any()),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Base(Base::Benzene),
@@ -242,7 +245,7 @@ mod tests {
                 Token::Locant(Locant::Number(3)),
                 Token::Locant(Locant::Number(7)),
                 Token::Multiplicity(3),
-                Token::Alkane(1),
+                Token::Structure(METHANE.as_any()),
                 Token::FreeValence,
                 Token::Locant(Locant::Number(3)),
                 Token::Locant(Locant::Number(7)),

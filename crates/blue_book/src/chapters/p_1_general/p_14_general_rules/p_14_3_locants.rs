@@ -1,4 +1,4 @@
-//! P-14.3 Locants
+//! # P-14.3 Locants
 
 use crate::Element;
 

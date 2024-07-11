@@ -1,1 +1,1 @@
-{"nodes":["N","C","N","C","C","C","H","H","H","N","H","H","O"],"node_holes":[],"edge_property":"undirected","edges":[[0,1,""],[1,2,""],[2,3,""],[3,4,""],[4,5,""],[5,0,""],[4,6,""],[5,7,""],[0,8,""],[9,10,""],[9,11,""],[3,9,""],[1,12,""]]}
+{"nodes":["N","C","N","C","C","C","H","H","H","N","H","H","O"],"node_holes":[],"edge_property":"undirected","edges":[[0,1,null],[1,2,null],[2,3,null],[3,4,null],[4,5,null],[5,0,null],[4,6,null],[5,7,null],[0,8,null],[9,10,null],[9,11,null],[3,9,null],[1,12,null]]}

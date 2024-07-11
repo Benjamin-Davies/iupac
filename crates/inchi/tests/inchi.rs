@@ -1,7 +1,7 @@
 use blue_book::{graph::Graph, parser::parse};
 use inchi::InChI;
 use paste::paste;
-use petgraph::{algo::is_isomorphic, graph::UnGraph};
+use petgraph::{algo::is_isomorphic_matching, graph::UnGraph};
 
 macro_rules! test_inchi {
     ($name:ident($inchi:literal)) => {
@@ -45,7 +45,11 @@ fn test_inchi_impl(iupac: &str, inchi: &str) {
 
     let any_match = isomers.iter().any(|isomer| {
         let inchi_graph = UnGraph::from(isomer);
-        is_isomorphic(&iupac_graph, &inchi_graph)
+        is_isomorphic_matching(&iupac_graph, &inchi_graph, eq, eq)
     });
     assert!(any_match);
+}
+
+fn eq<T: Eq>(a: &T, b: &T) -> bool {
+    a.eq(b)
 }

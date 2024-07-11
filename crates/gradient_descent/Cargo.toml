@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 blue_book.workspace = true
+red_book.workspace = true
 
 [dependencies.bevy]
 version = "0.13.2"

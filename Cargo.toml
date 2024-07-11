@@ -4,18 +4,27 @@ members = [
     "crates/blue_book",
     "crates/inchi",
     "crates/parsing",
+    "crates/red_book",
+
     "crates/gradient_descent",
 ]
-default-members = ["crates/blue_book", "crates/inchi"]
+default-members = [
+    "crates/blue_book",
+    "crates/inchi",
+    "crates/parsing",
+    "crates/red_book",
+]
 
 [workspace.dependencies]
 blue_book.path = "crates/blue_book"
 inchi.path = "crates/inchi"
 parsing.path = "crates/parsing"
+red_book.path = "crates/red_book"
+
 gradient_descent.path = "crates/gradient_descent"
 
 lazy_static = "1.4.0"
 paste = "1.0.15"
 petgraph = { version = "0.6.5", features = ["serde-1"] }
-serde = { version = "1.0.204", features = ["derive"] }
+serde = "1.0.204"
 serde_json = "1.0.120"

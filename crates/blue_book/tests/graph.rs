@@ -2,7 +2,8 @@ use std::{fs, path::PathBuf, process::Command};
 
 use blue_book::{graph::Graph, parser::parse};
 use paste::paste;
-use petgraph::{algo::is_isomorphic, graph::UnGraph};
+use petgraph::{algo::is_isomorphic_matching, graph::UnGraph};
+use red_book::elements::Element;
 
 macro_rules! test_graph {
     ($name:ident) => {
@@ -44,9 +45,9 @@ fn test_graph_impl(name: &str, iupac_name: &str) {
     let dot_path = PathBuf::from(format!("examples/{name}.dot"));
     if json_path.exists() {
         let json = fs::read_to_string(&json_path).unwrap();
-        let expected: UnGraph<&str, &str> = serde_json::from_str(&json).unwrap();
+        let expected: UnGraph<Element, ()> = serde_json::from_str(&json).unwrap();
 
-        assert!(is_isomorphic(&ungraph, &expected));
+        assert!(is_isomorphic_matching(&ungraph, &expected, eq, eq));
     } else {
         let json = serde_json::to_string(&ungraph).unwrap();
         fs::write(&json_path, json).unwrap();
@@ -59,4 +60,8 @@ fn test_graph_impl(name: &str, iupac_name: &str) {
             .status()
             .unwrap();
     }
+}
+
+fn eq<T: Eq>(a: &T, b: &T) -> bool {
+    a.eq(b)
 }

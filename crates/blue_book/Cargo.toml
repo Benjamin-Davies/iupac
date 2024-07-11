@@ -5,11 +5,12 @@ edition = "2021"
 
 [dependencies]
 lazy_static.workspace = true
-paste.workspace = true
 petgraph.workspace = true
 serde.workspace = true
 
 parsing.workspace = true
+red_book.workspace = true
 
 [dev-dependencies]
+paste.workspace = true
 serde_json.workspace = true

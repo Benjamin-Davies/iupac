@@ -6,7 +6,9 @@ edition = "2021"
 [dependencies]
 petgraph.workspace = true
 
-blue_book.workspace = true
+red_book.workspace = true
 
 [dev-dependencies]
 paste.workspace = true
+
+blue_book.workspace = true

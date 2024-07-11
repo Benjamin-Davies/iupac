@@ -87,7 +87,7 @@ lazy_static! {
 
     static ref ELEMENTS: dfa::Automaton<Element> = {
         let mut dfa = dfa::Automaton::new();
-        for &element in crate::ELEMENTS {
+        for &element in red_book::elements::ELEMENTS {
             dfa.insert(element.symbol(), element);
         }
         dfa

@@ -1,6 +1,8 @@
 use lazy_static::lazy_static;
 
-use crate::{dfa, Base, Element, Position};
+use parsing::dfa;
+
+use crate::{Base, Element, Position};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {

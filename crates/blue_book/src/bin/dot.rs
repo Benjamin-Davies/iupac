@@ -8,7 +8,7 @@
 
 use std::env;
 
-use iupac::{graph::Graph, parser::parse};
+use blue_book::{graph::Graph, parser::parse};
 
 fn main() {
     let name = env::args().nth(1).unwrap();

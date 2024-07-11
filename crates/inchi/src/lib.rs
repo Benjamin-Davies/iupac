@@ -1,8 +1,7 @@
 use std::{collections::BTreeMap, iter, ops::RangeInclusive};
 
+use blue_book::Element;
 use petgraph::graph::UnGraph;
-
-use crate::Element;
 
 mod parser;
 mod scanner;
@@ -90,7 +89,7 @@ impl InChI {
 
         elements
             .zip(degrees)
-            .all(|(element, degree)| degree <= element.standard_valence() as usize)
+            .all(|(element, degree)| degree <= element.standard_bonding_number() as usize)
     }
 }
 

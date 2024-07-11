@@ -3,9 +3,7 @@ use std::str::FromStr;
 use paste::paste;
 use serde::{Deserialize, Serialize};
 
-pub mod dfa;
 pub mod graph;
-pub mod inchi;
 pub mod parser;
 pub mod scanner;
 pub mod test;
@@ -117,8 +115,8 @@ elements! {
 }
 
 impl Element {
-    // Private because this is a very naive way of generating these (i.e. a hack).
-    fn standard_valence(&self) -> u8 {
+    /// P-14.1 BONDING NUMBER
+    pub fn standard_bonding_number(&self) -> u8 {
         match self.group() {
             1 => 1,
             13 => 3,

@@ -1,9 +1,19 @@
-[package]
-name = "iupac"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "2"
+members = [
+    "crates/blue_book",
+    "crates/inchi",
+    "crates/parsing",
+    "crates/gradient_descent",
+]
+default-members = ["crates/blue_book", "crates/inchi"]
 
-[dependencies]
+[workspace.dependencies]
+blue_book.path = "crates/blue_book"
+inchi.path = "crates/inchi"
+parsing.path = "crates/parsing"
+gradient_descent.path = "crates/gradient_descent"
+
 lazy_static = "1.4.0"
 paste = "1.0.15"
 petgraph = { version = "0.6.5", features = ["serde-1"] }

@@ -1,0 +1,15 @@
+[package]
+name = "blue_book"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lazy_static.workspace = true
+paste.workspace = true
+petgraph.workspace = true
+serde.workspace = true
+
+parsing.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

@@ -1,0 +1,18 @@
+[package]
+name = "gradient_descent"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+blue_book.workspace = true
+
+[dependencies.bevy]
+version = "0.13.2"
+default-features = false
+features = [
+    "bevy_winit",
+    "bevy_ui",
+    "wayland",
+    "dynamic_linking",
+    "bevy_gizmos",
+]

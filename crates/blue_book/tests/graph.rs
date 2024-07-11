@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf, process::Command};
 
-use iupac::{graph::Graph, parser::parse};
+use blue_book::{graph::Graph, parser::parse};
 use paste::paste;
 use petgraph::{algo::is_isomorphic, graph::UnGraph};
 
@@ -11,7 +11,7 @@ macro_rules! test_graph {
             fn [<test_ $name _graph>]() {
                 test_graph_impl(
                     &stringify!($name),
-                    &iupac::test::[<$name:upper>],
+                    &blue_book::test::[<$name:upper>],
                 );
             }
         }

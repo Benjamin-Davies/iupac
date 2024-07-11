@@ -1,9 +1,10 @@
-use red_book::elements::Element;
-
+pub mod chapters;
 pub mod graph;
 pub mod parser;
 pub mod scanner;
 pub mod test;
+
+pub use chapters::p_1_general_principles::p_11_scope::{Element, ELEMENTS};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Base {

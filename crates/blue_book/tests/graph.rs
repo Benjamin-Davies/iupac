@@ -1,9 +1,8 @@
 use std::{fs, path::PathBuf, process::Command};
 
-use blue_book::{graph::Graph, parser::parse};
+use blue_book::{graph::Graph, parser::parse, Element};
 use paste::paste;
 use petgraph::{algo::is_isomorphic_matching, graph::UnGraph};
-use red_book::elements::Element;
 
 macro_rules! test_graph {
     ($name:ident) => {

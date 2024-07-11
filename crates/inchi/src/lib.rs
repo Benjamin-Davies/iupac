@@ -1,7 +1,7 @@
 use std::{collections::BTreeMap, iter, ops::RangeInclusive};
 
+use blue_book::Element;
 use petgraph::graph::UnGraph;
-use red_book::elements::Element;
 
 mod parser;
 mod scanner;

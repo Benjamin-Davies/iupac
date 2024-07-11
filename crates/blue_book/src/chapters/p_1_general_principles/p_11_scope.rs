@@ -1,11 +1,14 @@
+//! # P-11 Scope of nomenclature for organic compounds
+
 use std::str::FromStr;
 
 use paste::paste;
 use serde::{de, Deserialize, Serialize};
 
 macro_rules! elements {
-    ($($symbol:ident $name:ident $period:literal $group:literal)*) => {
+    (#![doc = $doc:literal] $($symbol:ident $name:ident $group:literal)*) => {
         paste! {
+            #[doc = $doc]
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
             pub enum Element {
                 $([<$name:camel>],)*
@@ -29,12 +32,6 @@ macro_rules! elements {
                     }
                 }
 
-                pub fn period(&self) -> u32 {
-                    match self {
-                        $(Element::[<$name:camel>] => $period,)*
-                    }
-                }
-
                 pub fn group(&self) -> u32 {
                     match self {
                         $(Element::[<$name:camel>] => $group,)*
@@ -46,53 +43,40 @@ macro_rules! elements {
 }
 
 elements! {
-    H   hydrogen    1   1
+    //! Table 1.1 Elements included in these recommendations
 
-    // Elements selected from Blue Book P-11 SCOPE OF NOMENCLATURE FOR ORGANIC COMPOUNDS
-    B   boron       2  13
-    C   carbon      2  14
-    N   nitrogen    2  15
-    O   oxygen      2  16
-    F   fluorine    2  17
+    // Include hydrogen to aid with graph construction
+    H   hydrogen      1
 
-    Al  aluminium   3  13
-    Si  silicon     3  14
-    P   phosphorus  3  15
-    S   sulfur      3  16
-    Cl  chlorine    3  17
+    B   boron         13
+    C   carbon        14
+    N   nitrogen      15
+    O   oxygen        16
+    F   fluorine      17
 
-    Ga  gallium     4  13
-    Ge  germanium   4  14
-    As  arsenic     4  15
-    Se  selenium    4  16
-    Br  bromine     4  17
+    Al  aluminium     13
+    Si  silicon       14
+    P   phosphorus    15
+    S   sulfur        16
+    Cl  chlorine      17
 
-    In  indium      5  13
-    Sn  tin         5  14
-    Sb  antimony    5  15
-    Te  tellurium   5  16
-    I   iodine      5  17
+    Ga  gallium       13
+    Ge  germanium     14
+    As  arsenic       15
+    Se  selenium      16
+    Br  bromine       17
 
-    Tl  thallium    6  13
-    Pb  lead        6  14
-    Bi  bismuth     6  15
-    Po  polonium    6  16
-    At  astatine    6  17
-}
+    In  indium        13
+    Sn  tin           14
+    Sb  antimony      15
+    Te  tellurium     16
+    I   iodine        17
 
-impl Element {
-    /// Blue Book P-14.1 BONDING NUMBER
-    pub fn standard_bonding_number(self) -> u8 {
-        match self.group() {
-            1 => 1,
-            13 => 3,
-            14 => 4,
-            15 => 3,
-            16 => 2,
-            17 => 1,
-            _ => 0,
-        }
-    }
+    Tl  thallium      13
+    Pb  lead          14
+    Bi  bismuth       15
+    Po  polonium      16
+    At  astatine      17
 }
 
 impl PartialOrd for Element {

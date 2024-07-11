@@ -4,23 +4,14 @@ members = [
     "crates/blue_book",
     "crates/inchi",
     "crates/parsing",
-    "crates/red_book",
-
     "crates/gradient_descent",
 ]
-default-members = [
-    "crates/blue_book",
-    "crates/inchi",
-    "crates/parsing",
-    "crates/red_book",
-]
+default-members = ["crates/blue_book", "crates/inchi", "crates/parsing"]
 
 [workspace.dependencies]
 blue_book.path = "crates/blue_book"
 inchi.path = "crates/inchi"
 parsing.path = "crates/parsing"
-red_book.path = "crates/red_book"
-
 gradient_descent.path = "crates/gradient_descent"
 
 lazy_static = "1.4.0"

@@ -4,8 +4,7 @@ use std::{
 };
 
 use bevy::prelude::*;
-use blue_book::{graph::Graph, parser::parse};
-use red_book::elements::Element;
+use blue_book::{graph::Graph, parser::parse, Element};
 
 const FONT_SIZE: f32 = 32.0;
 const BOND_DRAWING_EXCLUSION_RADIUS: f32 = 0.5 * FONT_SIZE;

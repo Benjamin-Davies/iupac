@@ -1,6 +1,4 @@
-use red_book::elements::Element;
-
-use crate::{parser, Base, Position};
+use crate::{parser, Base, Element, Position};
 
 use super::Graph;
 

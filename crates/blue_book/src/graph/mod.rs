@@ -1,9 +1,8 @@
 use std::fmt;
 
 use petgraph::graph::UnGraph;
-use red_book::elements::Element;
 
-use crate::{parser::AST, Position};
+use crate::{parser::AST, Element, Position};
 
 mod bases;
 

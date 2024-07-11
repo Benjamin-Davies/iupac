@@ -1,4 +1,4 @@
-//! P-14 General Rules
+//! # P-14.1 Bonding Number
 
 use crate::Element;
 

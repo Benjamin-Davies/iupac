@@ -1,1 +1,1 @@
-pub mod p_1_general_principles;
+pub mod p_1_general;

@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 use parsing::dfa;
 
-use crate::{Base, Element, Position};
+use crate::{plugin::PLUGINS, Base, Element, Locant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -12,9 +12,11 @@ pub enum Token {
     CloseBracket,
 
     /// "1-", "2-", "3-", "1H-", etc.
-    Position(Position),
-    /// "mono", "di", "tri", etc. and "meth", "eth", "prop", "but"
-    Multiple(u8),
+    Locant(Locant),
+    /// "mono", "di", "tri", etc.
+    Multiplicity(u16),
+    /// "meth", "eth", "prop", "but"
+    Alkane(u16),
     /// "ane", "ene", "yne"
     Unsaturated(u8),
     /// "yl"
@@ -38,25 +40,14 @@ lazy_static! {
         dfa.insert(")", Token::CloseBracket);
         dfa.insert("]", Token::CloseBracket);
 
-        // P-14.2 MULTIPLICATIVE PREFIXES
-        dfa.insert("mon", Token::Multiple(1));
-        dfa.insert("hen", Token::Multiple(1));
-        dfa.insert("di", Token::Multiple(2));
-        dfa.insert("do", Token::Multiple(2));
-        dfa.insert("tri", Token::Multiple(3));
-        dfa.insert("tetr", Token::Multiple(4));
-        dfa.insert("pent", Token::Multiple(5));
-        dfa.insert("hex", Token::Multiple(6));
-        dfa.insert("hept", Token::Multiple(7));
-        dfa.insert("oct", Token::Multiple(8));
-        dfa.insert("non", Token::Multiple(9));
-        dfa.insert("dec", Token::Multiple(10));
-        dfa.insert("undec", Token::Multiple(11));
+        for plugin in PLUGINS {
+            plugin.init_tokens(&mut dfa);
+        }
 
-        dfa.insert("meth", Token::Multiple(1));
-        dfa.insert("eth", Token::Multiple(2));
-        dfa.insert("prop", Token::Multiple(3));
-        dfa.insert("but", Token::Multiple(4));
+        dfa.insert("meth", Token::Alkane(1));
+        dfa.insert("eth", Token::Alkane(2));
+        dfa.insert("prop", Token::Alkane(3));
+        dfa.insert("but", Token::Alkane(4));
 
         // P-29.2 GENERAL METHODOLOGY FOR NAMING SUBSTITUENT GROUPS
         dfa.insert("yl", Token::FreeValence);
@@ -135,12 +126,12 @@ impl<'input> Iterator for Scanner<'input> {
 
             let pos = if let Some((len, &element)) = ELEMENTS.get_by_prefix(self.input) {
                 self.input = &self.input[len..];
-                Position::Element(num, element)
+                Locant::Element(num, element)
             } else {
-                Position::Number(num)
+                Locant::Number(num)
             };
 
-            return Some(Token::Position(pos));
+            return Some(Token::Locant(pos));
         }
 
         if let Some((len, token)) = TOKENS.get_by_prefix_ignore_case(self.input) {
@@ -164,7 +155,7 @@ impl<'input> Iterator for Scanner<'input> {
 mod tests {
     use crate::{
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
-        Base, Element, Position,
+        Base, Element, Locant,
     };
 
     use super::{scan, Token};
@@ -173,28 +164,28 @@ mod tests {
     fn test_scan_simple() {
         assert_eq!(
             scan("Butane").collect::<Vec<_>>(),
-            vec![Token::Multiple(4), Token::Unsaturated(0)],
+            vec![Token::Alkane(4), Token::Unsaturated(0)],
         );
 
         assert_eq!(
             scan("Ethene").collect::<Vec<_>>(),
-            vec![Token::Multiple(2), Token::Unsaturated(1)],
+            vec![Token::Alkane(2), Token::Unsaturated(1)],
         );
 
         assert_eq!(
             scan("Hexamethylpentane").collect::<Vec<_>>(),
             vec![
-                Token::Multiple(6),
-                Token::Multiple(1),
+                Token::Multiplicity(6),
+                Token::Alkane(1),
                 Token::FreeValence,
-                Token::Multiple(5),
+                Token::Multiplicity(5),
                 Token::Unsaturated(0),
             ],
         );
 
         assert_eq!(
             scan("Pentyne").collect::<Vec<_>>(),
-            vec![Token::Multiple(5), Token::Unsaturated(2)],
+            vec![Token::Multiplicity(5), Token::Unsaturated(2)],
         );
     }
 
@@ -203,17 +194,17 @@ mod tests {
         assert_eq!(
             scan(DOPAMINE).collect::<Vec<_>>(),
             vec![
-                Token::Position(Position::Number(4)),
+                Token::Locant(Locant::Number(4)),
                 Token::OpenBracket,
-                Token::Position(Position::Number(2)),
+                Token::Locant(Locant::Number(2)),
                 Token::Prefix(Base::Ammonia),
-                Token::Multiple(2),
+                Token::Alkane(2),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Base(Base::Benzene),
-                Token::Position(Position::Number(1)),
-                Token::Position(Position::Number(2)),
-                Token::Multiple(2),
+                Token::Locant(Locant::Number(1)),
+                Token::Locant(Locant::Number(2)),
+                Token::Multiplicity(2),
                 Token::Suffix(Base::Water),
             ],
         );
@@ -221,22 +212,22 @@ mod tests {
         assert_eq!(
             scan(SALBUTAMOL).collect::<Vec<_>>(),
             vec![
-                Token::Position(Position::Number(4)),
+                Token::Locant(Locant::Number(4)),
                 Token::OpenBracket,
-                Token::Position(Position::Number(2)),
+                Token::Locant(Locant::Number(2)),
                 Token::OpenBracket,
                 Token::Prefix(Base::Isobutane),
                 Token::Prefix(Base::Ammonia),
                 Token::CloseBracket,
-                Token::Position(Position::Number(1)),
+                Token::Locant(Locant::Number(1)),
                 Token::Prefix(Base::Water),
-                Token::Multiple(2),
+                Token::Alkane(2),
                 Token::FreeValence,
                 Token::CloseBracket,
-                Token::Position(Position::Number(2)),
+                Token::Locant(Locant::Number(2)),
                 Token::OpenBracket,
                 Token::Prefix(Base::Water),
-                Token::Multiple(1),
+                Token::Alkane(1),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Base(Base::Benzene),
@@ -247,21 +238,21 @@ mod tests {
         assert_eq!(
             scan(CAFFEINE).collect::<Vec<_>>(),
             vec![
-                Token::Position(Position::Number(1)),
-                Token::Position(Position::Number(3)),
-                Token::Position(Position::Number(7)),
-                Token::Multiple(3),
-                Token::Multiple(1),
+                Token::Locant(Locant::Number(1)),
+                Token::Locant(Locant::Number(3)),
+                Token::Locant(Locant::Number(7)),
+                Token::Multiplicity(3),
+                Token::Alkane(1),
                 Token::FreeValence,
-                Token::Position(Position::Number(3)),
-                Token::Position(Position::Number(7)),
-                Token::Multiple(2),
+                Token::Locant(Locant::Number(3)),
+                Token::Locant(Locant::Number(7)),
+                Token::Multiplicity(2),
                 Token::Prefix(Base::Hydrogen),
-                Token::Position(Position::Element(1, Element::Hydrogen)),
+                Token::Locant(Locant::Element(1, Element::Hydrogen)),
                 Token::Base(Base::Purine),
-                Token::Position(Position::Number(2)),
-                Token::Position(Position::Number(6)),
-                Token::Multiple(2),
+                Token::Locant(Locant::Number(2)),
+                Token::Locant(Locant::Number(6)),
+                Token::Multiplicity(2),
                 Token::Suffix(Base::Oxygen),
             ],
         );

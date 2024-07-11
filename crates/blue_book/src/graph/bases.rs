@@ -1,8 +1,8 @@
-use crate::{parser, Base, Element, Position};
+use crate::{parser, Base, Element, Locant};
 
 use super::Graph;
 
-pub fn base(base: &Base, isomer: Position) -> Graph {
+pub fn base(base: &Base, isomer: Locant) -> Graph {
     match base {
         Base::Hydrogen => hydrogen(),
         Base::Oxygen => oxygen(),
@@ -19,7 +19,7 @@ pub fn hydrogen() -> Graph {
     Graph {
         atoms: vec![Element::Hydrogen, Element::Hydrogen],
         bonds: vec![(0, 1)],
-        positions: vec![(Position::Number(1), 0), (Position::Number(2), 1)],
+        positions: vec![(Locant::Number(1), 0), (Locant::Number(2), 1)],
         free_valences: vec![],
     }
 }
@@ -28,7 +28,7 @@ pub fn oxygen() -> Graph {
     Graph {
         atoms: vec![Element::Oxygen, Element::Oxygen],
         bonds: vec![(0, 1)],
-        positions: vec![(Position::Number(1), 0), (Position::Number(2), 1)],
+        positions: vec![(Locant::Number(1), 0), (Locant::Number(2), 1)],
         free_valences: vec![],
     }
 }
@@ -37,7 +37,7 @@ pub fn water() -> Graph {
     Graph {
         atoms: vec![Element::Oxygen, Element::Hydrogen, Element::Hydrogen],
         bonds: vec![(0, 1), (0, 2)],
-        positions: vec![(Position::Number(1), 0)],
+        positions: vec![(Locant::Number(1), 0)],
         free_valences: vec![],
     }
 }
@@ -51,7 +51,7 @@ pub fn ammonia() -> Graph {
             Element::Hydrogen,
         ],
         bonds: vec![(0, 1), (0, 2), (0, 3)],
-        positions: vec![(Position::Number(1), 0)],
+        positions: vec![(Locant::Number(1), 0)],
         free_valences: vec![],
     }
 }
@@ -71,7 +71,7 @@ pub fn benzene() -> Graph {
         bonds: (0..6)
             .flat_map(|i| [(i, i + 6), (i, (i + 1) % 6)])
             .collect(),
-        positions: (0..6).map(|i| (Position::Number(i as u8 + 1), i)).collect(),
+        positions: (0..6).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
         free_valences: vec![],
     }
 }
@@ -93,12 +93,12 @@ pub fn pyrimidine() -> Graph {
             .map(|i| (i, (i + 1) % 6))
             .chain([(1, 6), (3, 7), (4, 8), (5, 9)])
             .collect(),
-        positions: (0..6).map(|i| (Position::Number(i as u8 + 1), i)).collect(),
+        positions: (0..6).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
         free_valences: vec![],
     }
 }
 
-pub fn purine(isomer: Position) -> Graph {
+pub fn purine(isomer: Locant) -> Graph {
     let mut graph = Graph {
         atoms: vec![
             Element::Nitrogen,
@@ -132,12 +132,12 @@ pub fn purine(isomer: Position) -> Graph {
             (5, 10),
             (7, 11),
         ],
-        positions: (0..9).map(|i| (Position::Number(i as u8 + 1), i)).collect(),
+        positions: (0..9).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
         free_valences: vec![],
     };
 
     // N-H bond
-    let Position::Element(n, Element::Hydrogen) = isomer else {
+    let Locant::Element(n, Element::Hydrogen) = isomer else {
         panic!("Invalid purine isomer {isomer:?}");
     };
     graph.bonds.push((n as usize - 1, 12));

@@ -2,7 +2,7 @@ use std::fmt;
 
 use petgraph::graph::UnGraph;
 
-use crate::{parser::AST, Element, Position};
+use crate::{parser::AST, Element, Locant};
 
 mod bases;
 
@@ -10,7 +10,7 @@ mod bases;
 pub struct Graph {
     pub atoms: Vec<Element>,
     pub bonds: Vec<(usize, usize)>,
-    pub positions: Vec<(Position, usize)>,
+    pub positions: Vec<(Locant, usize)>,
     pub free_valences: Vec<usize>,
 }
 
@@ -18,7 +18,7 @@ impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
             &AST::Alkane(n) => alkane(n as usize),
-            AST::Base(base) => bases::base(base, Position::Unspecified),
+            AST::Base(base) => bases::base(base, Locant::Unspecified),
             AST::Isomer(isomer, base) => bases::base(base, *isomer),
 
             &AST::Group(ref base) => {
@@ -51,7 +51,7 @@ pub fn alkane(n: usize) -> Graph {
             .chain((0..n).flat_map(|i| [(i, n + 2 * i), (i, n + 2 * i + 1)])) // Regular C-H bonds
             .chain([(0, 3 * n), (n - 1, 3 * n + 1)].iter().copied()) // End C-H bonds
             .collect(),
-        positions: (0..n).map(|i| (Position::Number(i as u8 + 1), i)).collect(),
+        positions: (0..n).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
         free_valences: Vec::new(),
     }
 }
@@ -92,7 +92,7 @@ pub fn unsaturate(n: usize, base: Graph) -> Graph {
     molecule
 }
 
-pub fn substitute(pos: Position, group: Graph, base: Graph) -> Graph {
+pub fn substitute(pos: Locant, group: Graph, base: Graph) -> Graph {
     let free_valence_count = if group.atoms.as_slice() == &[Element::Oxygen] {
         2
     } else {
@@ -122,8 +122,8 @@ pub fn substitute(pos: Position, group: Graph, base: Graph) -> Graph {
 }
 
 impl Graph {
-    fn position(&self, pos: Position) -> &(Position, usize) {
-        if pos == Position::Unspecified {
+    fn position(&self, pos: Locant) -> &(Locant, usize) {
+        if pos == Locant::Unspecified {
             return self.positions.first().unwrap();
         }
         self.positions.iter().find(|(p, _)| p == &pos).unwrap()

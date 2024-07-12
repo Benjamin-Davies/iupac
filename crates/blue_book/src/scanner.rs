@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 
 use parsing::dfa;
 
-use crate::{named_structure::AnyNamedStructure, plugin::PLUGINS, Base, Element, Locant};
+use crate::{chapters::p_2_hydrides::Hydride, plugin::PLUGINS, Base, Element, Locant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -15,15 +15,13 @@ pub enum Token {
     Locant(Locant),
     /// "mono", "di", "tri", etc.
     Multiplicity(u16),
-    /// "meth", "eth", "prop", "but"
-    Alkane(u16),
     /// "ane", "ene", "yne"
     Unsaturated(u8),
     /// "yl"
     FreeValence,
 
-    /// A named structure: "borane", "methane", etc.
-    Structure(AnyNamedStructure),
+    /// A parent hydride: "borane", "ethane", "cyclohexane", etc.
+    Hydride(Hydride),
     /// A named base: "water", "ammonia", etc.
     Base(Base),
     /// A named base in prefix form: "hydroxy", "amino", etc.
@@ -45,10 +43,6 @@ lazy_static! {
         for plugin in PLUGINS {
             plugin.init_tokens(&mut dfa);
         }
-
-        dfa.insert("eth", Token::Alkane(2));
-        dfa.insert("prop", Token::Alkane(3));
-        dfa.insert("but", Token::Alkane(4));
 
         // P-29.2 GENERAL METHODOLOGY FOR NAMING SUBSTITUENT GROUPS
         dfa.insert("yl", Token::FreeValence);
@@ -158,7 +152,7 @@ impl<'input> Iterator for Scanner<'input> {
                 .find(|c: char| !c.is_numeric())
                 .unwrap_or(self.input.len());
             let (num, rest) = self.input.split_at(len);
-            let num = num.parse::<u8>().unwrap();
+            let num = num.parse::<u16>().unwrap();
             self.input = rest;
 
             let pos = if let Some((len, &element)) = ELEMENTS.get_by_prefix(self.input) {
@@ -191,8 +185,10 @@ impl<'input> Iterator for Scanner<'input> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        chapters::p_2_hydrides::p_21_simple_hydrides::p_21_1_mononuclear_hydrides::METHANE,
-        named_structure::NamedStructure,
+        chapters::p_2_hydrides::p_21_simple_hydrides::{
+            p_21_1_mononuclear_hydrides::METHANE,
+            p_21_2_acyclic_hydrides::{BUTANE, ETHANE},
+        },
         scanner::uncapitalize,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
         Base, Element, Locant,
@@ -204,19 +200,19 @@ mod tests {
     fn test_scan_simple() {
         assert_eq!(
             scan("butane").collect::<Vec<_>>(),
-            vec![Token::Alkane(4), Token::Unsaturated(0)],
+            vec![Token::Hydride(BUTANE.into()), Token::Unsaturated(0)],
         );
 
         assert_eq!(
             scan("ethene").collect::<Vec<_>>(),
-            vec![Token::Alkane(2), Token::Unsaturated(1)],
+            vec![Token::Hydride(ETHANE.into()), Token::Unsaturated(1)],
         );
 
         assert_eq!(
             scan("hexamethylpentane").collect::<Vec<_>>(),
             vec![
                 Token::Multiplicity(6),
-                Token::Structure(METHANE.as_any()),
+                Token::Hydride(METHANE.into()),
                 Token::FreeValence,
                 Token::Multiplicity(5),
                 Token::Unsaturated(0),
@@ -238,7 +234,7 @@ mod tests {
                 Token::OpenBracket,
                 Token::Locant(Locant::Number(2)),
                 Token::Prefix(Base::Ammonia),
-                Token::Alkane(2),
+                Token::Hydride(ETHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Base(Base::Benzene),
@@ -261,13 +257,13 @@ mod tests {
                 Token::CloseBracket,
                 Token::Locant(Locant::Number(1)),
                 Token::Prefix(Base::Water),
-                Token::Alkane(2),
+                Token::Hydride(ETHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Locant(Locant::Number(2)),
                 Token::OpenBracket,
                 Token::Prefix(Base::Water),
-                Token::Structure(METHANE.as_any()),
+                Token::Hydride(METHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Base(Base::Benzene),
@@ -282,7 +278,7 @@ mod tests {
                 Token::Locant(Locant::Number(3)),
                 Token::Locant(Locant::Number(7)),
                 Token::Multiplicity(3),
-                Token::Structure(METHANE.as_any()),
+                Token::Hydride(METHANE.into()),
                 Token::FreeValence,
                 Token::Locant(Locant::Number(3)),
                 Token::Locant(Locant::Number(7)),

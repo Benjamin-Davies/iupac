@@ -69,7 +69,10 @@ impl parser::State {
 
 #[cfg(test)]
 mod tests {
-    use crate::parser::{parse, AST};
+    use crate::{
+        chapters::p_2_hydrides::p_21_simple_hydrides::p_21_2_acyclic_hydrides::alkane,
+        parser::{parse, AST},
+    };
 
     #[test]
     fn test_parse_composite_prefix() {
@@ -85,9 +88,9 @@ mod tests {
             (363, "trihexacontatricta"),
             (486, "hexaoctacontatetracta"),
         ] {
-            let alkane = prefix.trim_end_matches('a').to_owned() + "ane";
-            let ast = parse(&alkane);
-            assert_eq!(*ast, AST::Alkane(n));
+            let name = prefix.trim_end_matches('a').to_owned() + "ane";
+            let ast = parse(&name);
+            assert_eq!(*ast, AST::Hydride(alkane(n).into()));
         }
     }
 }

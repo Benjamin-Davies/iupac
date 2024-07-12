@@ -71,7 +71,7 @@ pub fn benzene() -> Graph {
         bonds: (0..6)
             .flat_map(|i| [(i, i + 6), (i, (i + 1) % 6)])
             .collect(),
-        positions: (0..6).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
+        positions: (0..6).map(|i| (Locant::Number(i as u16 + 1), i)).collect(),
         free_valences: vec![],
     }
 }
@@ -93,7 +93,7 @@ pub fn pyrimidine() -> Graph {
             .map(|i| (i, (i + 1) % 6))
             .chain([(1, 6), (3, 7), (4, 8), (5, 9)])
             .collect(),
-        positions: (0..6).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
+        positions: (0..6).map(|i| (Locant::Number(i as u16 + 1), i)).collect(),
         free_valences: vec![],
     }
 }
@@ -132,7 +132,7 @@ pub fn purine(isomer: Locant) -> Graph {
             (5, 10),
             (7, 11),
         ],
-        positions: (0..9).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
+        positions: (0..9).map(|i| (Locant::Number(i as u16 + 1), i)).collect(),
         free_valences: vec![],
     };
 

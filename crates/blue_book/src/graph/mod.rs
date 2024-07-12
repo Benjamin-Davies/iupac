@@ -2,7 +2,7 @@ use std::fmt;
 
 use petgraph::graph::UnGraph;
 
-use crate::{named_structure::NamedStructure, parser::AST, Element, Locant};
+use crate::{parser::AST, Element, Locant};
 
 mod bases;
 
@@ -17,8 +17,7 @@ pub struct Graph {
 impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
-            &AST::Alkane(n) => alkane(n as usize),
-            AST::Structure(structure) => structure.to_graph(),
+            AST::Hydride(hydride) => hydride.to_graph(),
             AST::Base(base) => bases::base(base, Locant::Unspecified),
             AST::Isomer(isomer, base) => bases::base(base, *isomer),
 
@@ -52,7 +51,7 @@ pub fn alkane(n: usize) -> Graph {
             .chain((0..n).flat_map(|i| [(i, n + 2 * i), (i, n + 2 * i + 1)])) // Regular C-H bonds
             .chain([(0, 3 * n), (n - 1, 3 * n + 1)].iter().copied()) // End C-H bonds
             .collect(),
-        positions: (0..n).map(|i| (Locant::Number(i as u8 + 1), i)).collect(),
+        positions: (0..n).map(|i| (Locant::Number(i as u16 + 1), i)).collect(),
         free_valences: Vec::new(),
     }
 }

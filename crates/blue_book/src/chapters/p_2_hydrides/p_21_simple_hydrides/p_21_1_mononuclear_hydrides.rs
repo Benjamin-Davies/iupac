@@ -51,13 +51,17 @@ mononuclear_hydrides! {
     astane(astatine),
 
     methane(carbon),
+    ammonia(nitrogen),
+    water(oxygen),
 }
 
 impl Plugin for MononuclearHydridesPlugin {
     fn init_tokens(&self, dfa: &mut dfa::Automaton<Token>) {
-        for &(name, structure) in MONONUCLEAR_HYDRIDES {
-            let prefix = name.strip_suffix("ane").unwrap();
-            dfa.insert(prefix, Token::Hydride(structure.into()));
+        for &(mut name, structure) in MONONUCLEAR_HYDRIDES {
+            if let Some(prefix) = name.strip_suffix("ane") {
+                name = prefix;
+            }
+            dfa.insert(name, Token::Hydride(structure.into()));
         }
     }
 }

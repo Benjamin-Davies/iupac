@@ -51,8 +51,6 @@ lazy_static! {
         dfa.insert("en", Token::Unsaturated(1));
         dfa.insert("yn", Token::Unsaturated(2));
 
-        dfa.insert("water", Token::Base(Base::Water));
-        dfa.insert("ammonia", Token::Base(Base::Ammonia));
         dfa.insert("benzene", Token::Base(Base::Benzene));
         dfa.insert("phen", Token::Base(Base::Benzene));
         dfa.insert("pyrimidin", Token::Base(Base::Pyrimidine));

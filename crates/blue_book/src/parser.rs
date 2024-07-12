@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     named_structure::AnyNamedStructure,
-    scanner::{scan, Token},
+    scanner::{scan, uncapitalize, Token},
     Base, Element, Locant,
 };
 
@@ -33,8 +33,10 @@ pub(crate) enum StackItem {
 }
 
 pub fn parse(name: &str) -> Rc<AST> {
+    let name = uncapitalize(name);
+
     let mut state = State::default();
-    for token in scan(name) {
+    for token in scan(&name) {
         match token {
             Token::OpenBracket => {
                 state.stack.push(StackItem::OpenBracket);

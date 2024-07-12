@@ -91,6 +91,42 @@ pub struct Scanner<'input> {
     input: &'input str,
 }
 
+/// Undoes the capitalization mentioned in P-16.0 (Name writing / Introduction).
+///
+/// # Examples
+///
+/// ```rust
+/// use blue_book::scanner::uncapitalize;
+///
+/// assert_eq!(uncapitalize("Ethanol"), "ethanol");
+/// assert_eq!(uncapitalize("N-Methylphenethylamine"), "N-methylphenethylamine");
+/// ```
+pub fn uncapitalize(input: &str) -> String {
+    if input.is_empty() {
+        return String::new();
+    }
+
+    let mut i = 0;
+    let mut j = input.chars().next().unwrap().len_utf8();
+    while j < input.len() {
+        let a = input[i..].chars().next().unwrap();
+        let b = input[j..].chars().next().unwrap();
+
+        if a.is_ascii_uppercase() && b.is_ascii_lowercase() {
+            let mut result = String::with_capacity(input.len());
+            result.push_str(&input[..i]);
+            result.push(a.to_ascii_lowercase());
+            result.push_str(&input[j..]);
+            return result;
+        }
+
+        i = j;
+        j = i + b.len_utf8();
+    }
+
+    input.to_owned()
+}
+
 pub fn scan(input: &str) -> Scanner {
     // Trim common stereochemistry prefixes
     let input = input.trim_start_matches("(RS)-");
@@ -135,7 +171,7 @@ impl<'input> Iterator for Scanner<'input> {
             return Some(Token::Locant(pos));
         }
 
-        if let Some((len, token)) = TOKENS.get_by_prefix_ignore_case(self.input) {
+        if let Some((len, token)) = TOKENS.get_by_prefix(self.input) {
             self.input = &self.input[len..];
             Some(*token)
         } else if let Some(rest) = self.input.strip_prefix(is_vowel) {
@@ -157,6 +193,7 @@ mod tests {
     use crate::{
         chapters::p_2_hydrides::p_21_simple_hydrides::p_21_1_mononuclear_hydrides::METHANE,
         named_structure::NamedStructure,
+        scanner::uncapitalize,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
         Base, Element, Locant,
     };
@@ -166,17 +203,17 @@ mod tests {
     #[test]
     fn test_scan_simple() {
         assert_eq!(
-            scan("Butane").collect::<Vec<_>>(),
+            scan("butane").collect::<Vec<_>>(),
             vec![Token::Alkane(4), Token::Unsaturated(0)],
         );
 
         assert_eq!(
-            scan("Ethene").collect::<Vec<_>>(),
+            scan("ethene").collect::<Vec<_>>(),
             vec![Token::Alkane(2), Token::Unsaturated(1)],
         );
 
         assert_eq!(
-            scan("Hexamethylpentane").collect::<Vec<_>>(),
+            scan("hexamethylpentane").collect::<Vec<_>>(),
             vec![
                 Token::Multiplicity(6),
                 Token::Structure(METHANE.as_any()),
@@ -187,7 +224,7 @@ mod tests {
         );
 
         assert_eq!(
-            scan("Pentyne").collect::<Vec<_>>(),
+            scan("pentyne").collect::<Vec<_>>(),
             vec![Token::Multiplicity(5), Token::Unsaturated(2)],
         );
     }
@@ -195,7 +232,7 @@ mod tests {
     #[test]
     fn test_scan_complex() {
         assert_eq!(
-            scan(DOPAMINE).collect::<Vec<_>>(),
+            scan(&uncapitalize(DOPAMINE)).collect::<Vec<_>>(),
             vec![
                 Token::Locant(Locant::Number(4)),
                 Token::OpenBracket,
@@ -213,7 +250,7 @@ mod tests {
         );
 
         assert_eq!(
-            scan(SALBUTAMOL).collect::<Vec<_>>(),
+            scan(&uncapitalize(SALBUTAMOL)).collect::<Vec<_>>(),
             vec![
                 Token::Locant(Locant::Number(4)),
                 Token::OpenBracket,
@@ -239,7 +276,7 @@ mod tests {
         );
 
         assert_eq!(
-            scan(CAFFEINE).collect::<Vec<_>>(),
+            scan(&uncapitalize(CAFFEINE)).collect::<Vec<_>>(),
             vec![
                 Token::Locant(Locant::Number(1)),
                 Token::Locant(Locant::Number(3)),

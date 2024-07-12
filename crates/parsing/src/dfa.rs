@@ -91,30 +91,6 @@ impl<O> Automaton<O> {
             cursor = next;
         }
     }
-
-    /// Like `get_by_prefix`, but ignores case.
-    pub fn get_by_prefix_ignore_case(&self, input: &str) -> Option<(usize, &O)> {
-        if self.states.is_empty() {
-            return None;
-        }
-
-        let mut cursor = self.traverse(input);
-        loop {
-            let state = &self.states[cursor];
-            for (prefix, output) in &state.mappings {
-                if input.len() >= prefix.len() && input[..prefix.len()].eq_ignore_ascii_case(prefix)
-                {
-                    return Some((prefix.len(), &output));
-                }
-            }
-
-            let next = state.parent;
-            if next == cursor {
-                return None;
-            }
-            cursor = next;
-        }
-    }
 }
 
 impl<O> Default for Automaton<O> {

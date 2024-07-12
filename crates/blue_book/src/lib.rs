@@ -1,11 +1,10 @@
+pub mod chapters;
 pub mod graph;
+pub mod named_structure;
 pub mod parser;
+pub mod plugin;
+pub mod scanner;
 pub mod test;
-
-mod chapters;
-mod named_structure;
-mod plugin;
-mod scanner;
 
 pub use chapters::p_1_general::{
     p_11_scope::{Element, ELEMENTS},

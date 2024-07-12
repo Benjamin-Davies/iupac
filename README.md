@@ -2,7 +2,7 @@
 
 Parses IUPAC names and generates diagrams of the molecules. So far this only supports a subset of IUPAC names, ignores double bonds and hides all the Hydrogen atoms.
 
-![Caffeine drawn using custom code](examples/Screenshot%20from%202024-07-02%2017-07-02.png)
+![Caffeine drawn using gradient-descent layout engine](examples/Screenshot%20from%202024-07-02%2017-07-02.png)
 
 ## Usage
 

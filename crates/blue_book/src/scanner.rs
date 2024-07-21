@@ -51,11 +51,6 @@ lazy_static! {
         dfa.insert("en", Token::Unsaturated(1));
         dfa.insert("yn", Token::Unsaturated(2));
 
-        dfa.insert("benzene", Token::Base(Base::Benzene));
-        dfa.insert("phen", Token::Base(Base::Benzene));
-        dfa.insert("pyrimidin", Token::Base(Base::Pyrimidine));
-        dfa.insert("purin", Token::Base(Base::Purine));
-
         dfa.insert("hydr", Token::Prefix(Base::Hydrogen));
         dfa.insert("oxy", Token::Prefix(Base::Oxygen));
         dfa.insert("hydroxy", Token::Prefix(Base::Water));
@@ -144,6 +139,11 @@ impl<'input> Iterator for Scanner<'input> {
             }
         }
 
+        if let Some((len, &token)) = TOKENS.get_by_prefix(self.input) {
+            self.input = &self.input[len..];
+            return Some(token);
+        }
+
         if self.input.starts_with(char::is_numeric) {
             let len = self
                 .input
@@ -163,10 +163,7 @@ impl<'input> Iterator for Scanner<'input> {
             return Some(Token::Locant(pos));
         }
 
-        if let Some((len, token)) = TOKENS.get_by_prefix(self.input) {
-            self.input = &self.input[len..];
-            Some(*token)
-        } else if let Some(rest) = self.input.strip_prefix(is_vowel) {
+        if let Some(rest) = self.input.strip_prefix(is_vowel) {
             self.input = rest;
             self.next()
         } else {
@@ -183,13 +180,17 @@ impl<'input> Iterator for Scanner<'input> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        chapters::p_2_hydrides::p_21_simple_hydrides::{
-            p_21_1_mononuclear_hydrides::METHANE,
-            p_21_2_acyclic_hydrides::{BUTANE, ETHANE},
+        chapters::p_2_hydrides::{
+            p_21_simple_hydrides::{
+                p_21_1_mononuclear_hydrides::METHANE,
+                p_21_2_acyclic_hydrides::{BUTANE, ETHANE},
+            },
+            p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
+            p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
         },
         scanner::uncapitalize,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
-        Base, Element, Locant,
+        Base, Locant,
     };
 
     use super::{scan, Token};
@@ -235,7 +236,7 @@ mod tests {
                 Token::Hydride(ETHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
-                Token::Base(Base::Benzene),
+                Token::Hydride(Benzene.into()),
                 Token::Locant(Locant::Number(1)),
                 Token::Locant(Locant::Number(2)),
                 Token::Multiplicity(2),
@@ -264,7 +265,7 @@ mod tests {
                 Token::Hydride(METHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
-                Token::Base(Base::Benzene),
+                Token::Hydride(Benzene.into()),
                 Token::Suffix(Base::Water),
             ],
         );
@@ -282,8 +283,7 @@ mod tests {
                 Token::Locant(Locant::Number(7)),
                 Token::Multiplicity(2),
                 Token::Prefix(Base::Hydrogen),
-                Token::Locant(Locant::Element(1, Element::Hydrogen)),
-                Token::Base(Base::Purine),
+                Token::Hydride(Purine(1).into()),
                 Token::Locant(Locant::Number(2)),
                 Token::Locant(Locant::Number(6)),
                 Token::Multiplicity(2),

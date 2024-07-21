@@ -1,4 +1,4 @@
-//! # Mononuclear and Acyclic Polynuclear Parent Hydrides
+//! # P-21 Mononuclear and Acyclic Polynuclear Parent Hydrides
 
 use crate::{graph::Graph, Element, Locant};
 
@@ -15,8 +15,8 @@ pub struct SimpleHydride {
 }
 
 impl From<SimpleHydride> for Hydride {
-    fn from(hydride: SimpleHydride) -> Self {
-        Hydride::Simple(hydride)
+    fn from(ast: SimpleHydride) -> Self {
+        Hydride::Simple(ast)
     }
 }
 

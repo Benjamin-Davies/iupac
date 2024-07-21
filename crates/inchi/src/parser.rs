@@ -120,13 +120,12 @@ impl FromStr for Hydrogens {
                 loop {
                     let start = scanner.expect_numeric();
 
-                    let end;
-                    if scanner.lookahead_hyphen() {
+                    let end = if scanner.lookahead_hyphen() {
                         scanner.expect(Token::Hyphen);
-                        end = scanner.expect_numeric();
+                        scanner.expect_numeric()
                     } else {
-                        end = start;
-                    }
+                        start
+                    };
 
                     ranges.push(start..=end);
 
@@ -139,12 +138,11 @@ impl FromStr for Hydrogens {
 
                 scanner.expect(Token::Alpha("H"));
 
-                let count;
-                if scanner.lookahead_numeric() {
-                    count = scanner.expect_numeric();
+                let count = if scanner.lookahead_numeric() {
+                    scanner.expect_numeric()
                 } else {
-                    count = 1;
-                }
+                    1
+                };
 
                 immobile_hydrogens.push((ranges, count));
             } else {
@@ -152,12 +150,11 @@ impl FromStr for Hydrogens {
                 scanner.expect(Token::LParen);
                 scanner.expect(Token::Alpha("H"));
 
-                let count;
-                if scanner.lookahead_numeric() {
-                    count = scanner.expect_numeric();
+                let count = if scanner.lookahead_numeric() {
+                    scanner.expect_numeric()
                 } else {
-                    count = 1;
-                }
+                    1
+                };
 
                 scanner.expect(Token::Comma);
 

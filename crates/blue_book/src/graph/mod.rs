@@ -18,10 +18,9 @@ impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
             AST::Hydride(hydride) => hydride.to_graph(),
-            AST::Base(base) => bases::base(base, Locant::Unspecified),
-            AST::Isomer(isomer, base) => bases::base(base, *isomer),
+            AST::Base(base) => bases::base(base),
 
-            &AST::Group(ref base) => {
+            AST::Group(base) => {
                 let base = Graph::from(&**base);
                 free_valence(base)
             }
@@ -82,8 +81,7 @@ pub fn unsaturate(n: usize, base: Graph) -> Graph {
         for (_, i) in positions {
             let neighboring_hydrogen = molecule
                 .neighbors(i)
-                .filter(|&j| molecule.atoms[j] == Element::Hydrogen)
-                .next()
+                .find(|&j| molecule.atoms[j] == Element::Hydrogen)
                 .unwrap();
             molecule.remove_atom(neighboring_hydrogen);
         }
@@ -93,7 +91,7 @@ pub fn unsaturate(n: usize, base: Graph) -> Graph {
 }
 
 pub fn substitute(pos: Locant, group: Graph, base: Graph) -> Graph {
-    let free_valence_count = if group.atoms.as_slice() == &[Element::Oxygen] {
+    let free_valence_count = if group.atoms.as_slice() == [Element::Oxygen] {
         2
     } else {
         group.free_valences.len()

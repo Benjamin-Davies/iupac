@@ -17,13 +17,4 @@ pub enum Base {
     Water,
     Ammonia,
     Isobutane,
-    Benzene,
-    Pyrimidine,
-    Purine,
-}
-
-impl Base {
-    pub fn has_isomers(&self) -> bool {
-        matches!(self, Base::Purine)
-    }
 }

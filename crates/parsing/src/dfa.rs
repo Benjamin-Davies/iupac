@@ -33,7 +33,7 @@ impl<O> Automaton<O> {
         for byte in input.bytes() {
             let nibble = low_nibble(byte);
             if let Some(next) = self.states[cursor].transitions[nibble] {
-                cursor = next.get() as usize;
+                cursor = next.get();
             } else {
                 break;
             }
@@ -50,7 +50,7 @@ impl<O> Automaton<O> {
         for byte in input.bytes() {
             let nibble = low_nibble(byte);
             if let Some(next) = self.states[cursor].transitions[nibble] {
-                cursor = next.get() as usize;
+                cursor = next.get();
             } else {
                 let next = self.states.len();
                 self.states.push(State::default());
@@ -80,7 +80,7 @@ impl<O> Automaton<O> {
             let state = &self.states[cursor];
             for (prefix, output) in &state.mappings {
                 if input.starts_with(prefix) {
-                    return Some((prefix.len(), &output));
+                    return Some((prefix.len(), output));
                 }
             }
 

@@ -10,7 +10,6 @@ use crate::{
 pub enum AST {
     Hydride(Hydride),
     Base(Base),
-    Isomer(Locant, Base),
 
     Group(Rc<AST>),
     Unsaturated(u8, Rc<AST>),
@@ -109,18 +108,7 @@ pub fn parse(name: &str) -> Rc<AST> {
                 state.stack.push(StackItem::Molecule(molecule));
             }
             Token::Base(base) => {
-                let molecule;
-                if base.has_isomers() {
-                    let &StackItem::Locant(pos) = state.stack.last().unwrap() else {
-                        panic!("missing position for isomer: {base:?}, {state:?}");
-                    };
-                    state.stack.pop();
-
-                    molecule = AST::Isomer(pos, base).into();
-                } else {
-                    molecule = AST::Base(base).into();
-                }
-
+                let molecule = AST::Base(base).into();
                 state.stack.push(StackItem::Molecule(molecule));
             }
             Token::Prefix(base) => {
@@ -192,12 +180,16 @@ impl State {
 #[cfg(test)]
 mod tests {
     use crate::{
-        chapters::p_2_hydrides::p_21_simple_hydrides::{
-            p_21_1_mononuclear_hydrides::METHANE,
-            p_21_2_acyclic_hydrides::{alkane, BUTANE, ETHANE, PROPANE},
+        chapters::p_2_hydrides::{
+            p_21_simple_hydrides::{
+                p_21_1_mononuclear_hydrides::METHANE,
+                p_21_2_acyclic_hydrides::{alkane, BUTANE, ETHANE, PROPANE},
+            },
+            p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
+            p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
         },
         test::{ADENINE, CAFFEINE, CYTOSINE, DOPAMINE, GUANINE, SALBUTAMOL, THYMINE},
-        Base, Element, Locant,
+        Base, Locant,
     };
 
     use super::{parse, AST};
@@ -288,7 +280,7 @@ mod tests {
                             .into(),
                         )
                         .into(),
-                        AST::Base(Base::Benzene).into(),
+                        AST::Hydride(Benzene.into()).into(),
                     )
                     .into(),
                 )
@@ -339,7 +331,7 @@ mod tests {
                             .into(),
                         )
                         .into(),
-                        AST::Base(Base::Benzene).into(),
+                        AST::Hydride(Benzene.into()).into(),
                     )
                     .into(),
                 )
@@ -374,11 +366,7 @@ mod tests {
                                         Locant::Number(7),
                                         AST::Group(AST::Base(Base::Hydrogen).into()).into(),
                                         // 1H-Purine
-                                        AST::Isomer(
-                                            Locant::Element(1, Element::Hydrogen),
-                                            Base::Purine,
-                                        )
-                                        .into(),
+                                        AST::Hydride(Purine(1).into()).into(),
                                     )
                                     .into(),
                                 )

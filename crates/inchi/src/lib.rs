@@ -51,7 +51,7 @@ impl InChI {
 
         for &i in possible_indices {
             let mut new = self.clone();
-            new.hydrogens.mobile_hydrogens = mobile_hydrogens.clone();
+            new.hydrogens.mobile_hydrogens.clone_from(&mobile_hydrogens);
             new.hydrogens.immobile_hydrogens.push((vec![i..=i], 1));
             if new.is_plausible() {
                 new.collect_isomers(isomers);
@@ -128,9 +128,7 @@ impl From<&InChI> for UnGraph<Element, ()> {
             }
         }
 
-        for _ in &value.hydrogens.mobile_hydrogens {
-            unimplemented!();
-        }
+        assert!(value.hydrogens.mobile_hydrogens.is_empty());
 
         graph
     }

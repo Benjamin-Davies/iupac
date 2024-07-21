@@ -44,18 +44,11 @@ lazy_static! {
             plugin.init_tokens(&mut dfa);
         }
 
-        // P-29.2 GENERAL METHODOLOGY FOR NAMING SUBSTITUENT GROUPS
-        dfa.insert("yl", Token::FreeValence);
-
-        dfa.insert("an", Token::Unsaturated(0));
-        dfa.insert("en", Token::Unsaturated(1));
-        dfa.insert("yn", Token::Unsaturated(2));
 
         dfa.insert("hydr", Token::Prefix(Base::Hydrogen));
         dfa.insert("oxy", Token::Prefix(Base::Oxygen));
         dfa.insert("hydroxy", Token::Prefix(Base::Water));
         dfa.insert("amino", Token::Prefix(Base::Ammonia));
-        dfa.insert("tert-butyl", Token::Prefix(Base::Isobutane));
 
         dfa.insert("one", Token::Suffix(Base::Oxygen));
         dfa.insert("ol", Token::Suffix(Base::Water));
@@ -187,6 +180,7 @@ mod tests {
             },
             p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
             p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
+            Hydride::Isobutane,
         },
         scanner::uncapitalize,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
@@ -251,7 +245,8 @@ mod tests {
                 Token::OpenBracket,
                 Token::Locant(Locant::Number(2)),
                 Token::OpenBracket,
-                Token::Prefix(Base::Isobutane),
+                Token::Hydride(Isobutane),
+                Token::FreeValence,
                 Token::Prefix(Base::Ammonia),
                 Token::CloseBracket,
                 Token::Locant(Locant::Number(1)),

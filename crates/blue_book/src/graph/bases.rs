@@ -1,4 +1,4 @@
-use crate::{parser, Base, Element, Locant};
+use crate::{Base, Element, Locant};
 
 use super::Graph;
 
@@ -8,7 +8,6 @@ pub fn base(base: &Base) -> Graph {
         Base::Oxygen => oxygen(),
         Base::Water => water(),
         Base::Ammonia => ammonia(),
-        Base::Isobutane => isobutane(),
     }
 }
 
@@ -51,9 +50,4 @@ pub fn ammonia() -> Graph {
         positions: vec![(Locant::Number(1), 0)],
         free_valences: vec![],
     }
-}
-
-pub fn isobutane() -> Graph {
-    let ast = parser::parse("1,1-Dimethylethane");
-    Graph::from(&*ast)
 }

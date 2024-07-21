@@ -1,3 +1,5 @@
+//! # P-14.2 Multiplicative Prefixes
+
 use crate::{parser, plugin::Plugin, scanner::Token};
 
 pub struct MultiplicativePrefixesPlugin;

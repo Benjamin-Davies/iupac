@@ -187,6 +187,7 @@ mod tests {
             },
             p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
             p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
+            Hydride::Isobutane,
         },
         test::{ADENINE, CAFFEINE, CYTOSINE, DOPAMINE, GUANINE, SALBUTAMOL, THYMINE},
         Base, Locant,
@@ -303,7 +304,7 @@ mod tests {
                             // tert-Butylamino
                             AST::Substitution(
                                 Locant::Unspecified,
-                                AST::Group(AST::Base(Base::Isobutane).into()).into(),
+                                AST::Group(AST::Hydride(Isobutane).into()).into(),
                                 AST::Group(AST::Base(Base::Ammonia).into()).into(),
                             )
                             .into(),

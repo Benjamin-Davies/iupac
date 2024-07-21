@@ -9,6 +9,7 @@ use crate::{
                 p_22_1_monocyclic_hydocarbons, p_22_2_heteromonocyclic_hydrides,
             },
             p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components,
+            p_29_hydride_prefixes::p_29_2_general_names,
         },
     },
     scanner::Token,
@@ -25,4 +26,5 @@ pub const PLUGINS: &[&dyn Plugin] = &[
     &p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbonsPlugin,
     &p_22_2_heteromonocyclic_hydrides::HeteromonocyclicHydridesPlugin,
     &p_25_2_heterocyclic_ring_components::HeterocyclicRingPlugin,
+    &p_29_2_general_names::GeneralHydridePrefixesPlugin,
 ];

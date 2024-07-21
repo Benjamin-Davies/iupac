@@ -16,5 +16,4 @@ pub enum Base {
     Oxygen,
     Water,
     Ammonia,
-    Isobutane,
 }

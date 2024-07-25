@@ -31,7 +31,7 @@ impl ToStructure for AST {
     fn to_structure(&self) -> Structure {
         match self {
             AST::Hydride(hydride) => hydride.to_structure(),
-            AST::Group(_) => todo!(),
+            AST::Group(ast) => into_group(ast.to_structure()),
             AST::CharacteristicGroup(group) => group.to_structure(),
             AST::Unsaturated(_, _) => todo!(),
             AST::Substitution(locant, group, parent) => {
@@ -39,6 +39,13 @@ impl ToStructure for AST {
             }
         }
     }
+}
+
+fn into_group(mut structure: Structure) -> Structure {
+    let id = structure.locate(Locant::Number(1)).unwrap();
+    structure.graph[id].hydrogen_count -= 1;
+    structure.free_valences.push((id, 1));
+    structure
 }
 
 impl Structure {

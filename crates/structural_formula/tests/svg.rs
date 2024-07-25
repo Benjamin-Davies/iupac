@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, path::PathBuf};
 
 use blue_book::parser::parse;
 use paste::paste;
@@ -23,7 +23,7 @@ macro_rules! test_svg {
 
 test_svg!(
     isopropanol,
-    // isobutane,
+    isobutane,
     //
     // dopamine,
     // salbutamol,
@@ -39,9 +39,9 @@ fn test_svg_impl(name: &str, iupac_name: &str) {
     let ast = parse(iupac_name);
     let structure = ast.to_structure();
 
-    let path = format!("examples/{name}.svg");
+    let path = PathBuf::from(format!("examples/{name}.svg"));
     let contents = structure.svg().to_string();
-    if fs::read_to_string(&path).unwrap() != contents {
+    if !path.exists() || fs::read_to_string(&path).unwrap() != contents {
         fs::write(&path, contents).unwrap();
     }
 }

@@ -1,11 +1,18 @@
 use blue_book::Locant;
+use glam::{Affine2, Vec2};
 use petgraph::{graph::NodeIndex, visit::EdgeRef};
 
 use crate::structure::{Bond, Structure};
 
-pub fn substitute(locant: Locant, group: &Structure, mut parent: Structure) -> Structure {
+pub fn substitute(locant: Locant, mut group: Structure, mut parent: Structure) -> Structure {
     let &[(group_atom, bond_order)] = group.free_valences.as_slice().try_into().unwrap();
-    let location = parent.locate(locant).unwrap();
+    let parent_atom = parent.locate(locant).unwrap();
+
+    let offset = Vec2::NEG_Y;
+    let parent_atom_position = parent.graph[parent_atom].position;
+    let group_atom_position = group.graph[group_atom].position;
+    let translation = parent_atom_position - group_atom_position + offset;
+    group.transform(Affine2::from_translation(translation));
 
     // Combine the graphs
     let index_offset = parent.graph.node_count();
@@ -23,14 +30,10 @@ pub fn substitute(locant: Locant, group: &Structure, mut parent: Structure) -> S
     }
 
     // Perform the substitution
+    parent.graph[parent_atom].hydrogen_count -= bond_order;
     parent
         .graph
-        .node_weight_mut(location)
-        .unwrap()
-        .hydrogen_count -= bond_order;
-    parent
-        .graph
-        .add_edge(location, translate_id(group_atom), Bond { bond_order });
+        .add_edge(parent_atom, translate_id(group_atom), Bond { bond_order });
 
     parent
 }

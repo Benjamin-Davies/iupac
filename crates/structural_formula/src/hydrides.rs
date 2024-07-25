@@ -1,4 +1,7 @@
+use core::f32;
+
 use blue_book::chapters::p_2_hydrides::{p_21_simple_hydrides::SimpleHydride, Hydride};
+use glam::Vec2;
 use petgraph::graph::{NodeIndex, UnGraph};
 
 use crate::structure::{Atom, Bond, Structure, ToStructure};
@@ -21,6 +24,11 @@ impl ToStructure for SimpleHydride {
 
         let mut graph = UnGraph::new_undirected();
         for i in 0..length {
+            let position = Vec2 {
+                x: 0.5 * f32::sqrt(3.0) * i as f32,
+                y: if i % 2 == 1 { -0.5 } else { 0.0 },
+            };
+
             let hydrogen_count = if i == 0 || i == length - 1 {
                 element.standard_bonding_number() - 1
             } else {
@@ -29,6 +37,7 @@ impl ToStructure for SimpleHydride {
             let atom = Atom {
                 element,
                 hydrogen_count,
+                position,
             };
             graph.add_node(atom);
         }

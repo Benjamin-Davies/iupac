@@ -1,0 +1,15 @@
+<svg viewBox='-15 -60 81.961525 75' xmlns='http://www.w3.org/2000/svg'>
+<style>
+            text {
+                font-family: serif;
+                font-size: 16px;
+            }
+        </style>
+<circle cx='0' cy='0' r='0.5' fill='black' />
+<circle cx='25.980762' cy='-15' r='0.5' fill='black' />
+<circle cx='51.961525' cy='0' r='0.5' fill='black' />
+<text x='25.980762' y='-45' text-anchor='middle' dominant-baseline='middle'>O</text>
+<line x1='0' y1='0' x2='25.980762' y2='-15' stroke='black' />
+<line x1='25.980762' y1='-15' x2='51.961525' y2='0' stroke='black' />
+<line x1='25.980762' y1='-15' x2='25.980762' y2='-39' stroke='black' />
+</svg>

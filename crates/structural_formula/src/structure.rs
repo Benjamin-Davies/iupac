@@ -1,4 +1,5 @@
 use blue_book::{parser::AST, Element, Locant};
+use glam::Vec2;
 use petgraph::graph::{NodeIndex, UnGraph};
 
 use crate::substitution::substitute;
@@ -7,7 +8,7 @@ use crate::substitution::substitute;
 pub struct Atom {
     pub element: Element,
     pub hydrogen_count: u8,
-    // TODO: position
+    pub position: Vec2,
 }
 
 #[derive(Debug, Clone)]
@@ -34,7 +35,7 @@ impl ToStructure for AST {
             AST::CharacteristicGroup(group) => group.to_structure(),
             AST::Unsaturated(_, _) => todo!(),
             AST::Substitution(locant, group, parent) => {
-                substitute(*locant, &group.to_structure(), parent.to_structure())
+                substitute(*locant, group.to_structure(), parent.to_structure())
             }
         }
     }

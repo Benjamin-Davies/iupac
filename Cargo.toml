@@ -21,6 +21,7 @@ parsing.path = "crates/parsing"
 gradient_descent.path = "crates/gradient_descent"
 structural_formula.path = "crates/structural_formula"
 
+glam = "0.28.0"
 lazy_static = "1.4.0"
 paste = "1.0.15"
 petgraph = { version = "0.6.5", features = ["serde-1"] }

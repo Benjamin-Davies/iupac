@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+glam.workspace = true
+paste.workspace = true
 petgraph.workspace = true
 
 blue_book.workspace = true

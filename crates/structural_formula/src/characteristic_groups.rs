@@ -1,4 +1,5 @@
 use blue_book::{chapters::p_3_substituent_groups::CharacteristicGroup, Element};
+use glam::Vec2;
 use petgraph::graph::{NodeIndex, UnGraph};
 
 use crate::structure::{Atom, Structure, ToStructure};
@@ -19,6 +20,7 @@ fn hydroxy() -> Structure {
     graph.add_node(Atom {
         element: Element::Oxygen,
         hydrogen_count: 1,
+        position: Vec2::ZERO,
     });
 
     Structure {

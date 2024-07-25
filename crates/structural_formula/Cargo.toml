@@ -1,0 +1,9 @@
+[package]
+name = "structural_formula"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+petgraph.workspace = true
+
+blue_book.workspace = true

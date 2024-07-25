@@ -10,8 +10,8 @@ pub mod p_21_2_acyclic_hydrides;
 /// A homogenous acyclic (mono- or poly-nuclear) parent hydride.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SimpleHydride {
-    length: u16,
-    element: Element,
+    pub length: u16,
+    pub element: Element,
 }
 
 impl From<SimpleHydride> for Hydride {

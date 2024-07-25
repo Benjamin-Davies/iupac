@@ -2,7 +2,11 @@ use lazy_static::lazy_static;
 
 use parsing::dfa;
 
-use crate::{chapters::p_2_hydrides::Hydride, plugin::PLUGINS, Base, Element, Locant};
+use crate::{
+    chapters::{p_2_hydrides::Hydride, p_3_substituent_groups::CharacteristicGroup},
+    plugin::PLUGINS,
+    Element, Locant,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Token {
@@ -22,12 +26,10 @@ pub enum Token {
 
     /// A parent hydride: "borane", "ethane", "cyclohexane", etc.
     Hydride(Hydride),
-    /// A named base: "water", "ammonia", etc.
-    Base(Base),
     /// A named base in prefix form: "hydroxy", "amino", etc.
-    Prefix(Base),
+    Prefix(CharacteristicGroup),
     /// A named base in suffix form: "hydroxy", "amine", etc.
-    Suffix(Base),
+    Suffix(CharacteristicGroup),
 }
 
 lazy_static! {
@@ -43,16 +45,6 @@ lazy_static! {
         for plugin in PLUGINS {
             plugin.init_tokens(&mut dfa);
         }
-
-
-        dfa.insert("hydr", Token::Prefix(Base::Hydrogen));
-        dfa.insert("oxy", Token::Prefix(Base::Oxygen));
-        dfa.insert("hydroxy", Token::Prefix(Base::Water));
-        dfa.insert("amino", Token::Prefix(Base::Ammonia));
-
-        dfa.insert("one", Token::Suffix(Base::Oxygen));
-        dfa.insert("ol", Token::Suffix(Base::Water));
-        dfa.insert("amine", Token::Suffix(Base::Ammonia));
 
         dfa
     };
@@ -173,18 +165,21 @@ impl<'input> Iterator for Scanner<'input> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        chapters::p_2_hydrides::{
-            p_21_simple_hydrides::{
-                p_21_1_mononuclear_hydrides::METHANE,
-                p_21_2_acyclic_hydrides::{BUTANE, ETHANE},
+        chapters::{
+            p_2_hydrides::{
+                p_21_simple_hydrides::{
+                    p_21_1_mononuclear_hydrides::METHANE,
+                    p_21_2_acyclic_hydrides::{BUTANE, ETHANE},
+                },
+                p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
+                p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
+                Hydride::Isobutane,
             },
-            p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
-            p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
-            Hydride::Isobutane,
+            p_3_substituent_groups::CharacteristicGroup,
         },
         scanner::uncapitalize,
         test::{CAFFEINE, DOPAMINE, SALBUTAMOL},
-        Base, Locant,
+        Locant,
     };
 
     use super::{scan, Token};
@@ -226,7 +221,7 @@ mod tests {
                 Token::Locant(Locant::Number(4)),
                 Token::OpenBracket,
                 Token::Locant(Locant::Number(2)),
-                Token::Prefix(Base::Ammonia),
+                Token::Prefix(CharacteristicGroup::Amino),
                 Token::Hydride(ETHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
@@ -234,7 +229,7 @@ mod tests {
                 Token::Locant(Locant::Number(1)),
                 Token::Locant(Locant::Number(2)),
                 Token::Multiplicity(2),
-                Token::Suffix(Base::Water),
+                Token::Suffix(CharacteristicGroup::Hydroxy),
             ],
         );
 
@@ -247,21 +242,21 @@ mod tests {
                 Token::OpenBracket,
                 Token::Hydride(Isobutane),
                 Token::FreeValence,
-                Token::Prefix(Base::Ammonia),
+                Token::Prefix(CharacteristicGroup::Amino),
                 Token::CloseBracket,
                 Token::Locant(Locant::Number(1)),
-                Token::Prefix(Base::Water),
+                Token::Prefix(CharacteristicGroup::Hydroxy),
                 Token::Hydride(ETHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Locant(Locant::Number(2)),
                 Token::OpenBracket,
-                Token::Prefix(Base::Water),
+                Token::Prefix(CharacteristicGroup::Hydroxy),
                 Token::Hydride(METHANE.into()),
                 Token::FreeValence,
                 Token::CloseBracket,
                 Token::Hydride(Benzene.into()),
-                Token::Suffix(Base::Water),
+                Token::Suffix(CharacteristicGroup::Hydroxy),
             ],
         );
 
@@ -277,12 +272,12 @@ mod tests {
                 Token::Locant(Locant::Number(3)),
                 Token::Locant(Locant::Number(7)),
                 Token::Multiplicity(2),
-                Token::Prefix(Base::Hydrogen),
+                Token::Prefix(CharacteristicGroup::Hydro),
                 Token::Hydride(Purine(1).into()),
                 Token::Locant(Locant::Number(2)),
                 Token::Locant(Locant::Number(6)),
                 Token::Multiplicity(2),
-                Token::Suffix(Base::Oxygen),
+                Token::Suffix(CharacteristicGroup::Oxo),
             ],
         );
     }

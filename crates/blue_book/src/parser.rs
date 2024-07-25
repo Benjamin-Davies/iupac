@@ -1,17 +1,19 @@
 use std::rc::Rc;
 
 use crate::{
-    chapters::p_2_hydrides::{p_21_simple_hydrides::p_21_2_acyclic_hydrides::alkane, Hydride},
+    chapters::{
+        p_2_hydrides::{p_21_simple_hydrides::p_21_2_acyclic_hydrides::alkane, Hydride},
+        p_3_substituent_groups::CharacteristicGroup,
+    },
     scanner::{scan, uncapitalize, Token},
-    Base, Element, Locant,
+    Element, Locant,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AST {
     Hydride(Hydride),
-    Base(Base),
-
     Group(Rc<AST>),
+    CharacteristicGroup(CharacteristicGroup),
     Unsaturated(u8, Rc<AST>),
     Substitution(Locant, Rc<AST>, Rc<AST>),
 }
@@ -75,7 +77,7 @@ pub fn parse(name: &str) -> Rc<AST> {
                     for position in hydride_positions {
                         *molecule = AST::Substitution(
                             position,
-                            AST::Group(AST::Base(Base::Hydrogen).into()).into(),
+                            AST::CharacteristicGroup(CharacteristicGroup::Hydro).into(),
                             molecule.clone(),
                         )
                         .into();
@@ -107,18 +109,12 @@ pub fn parse(name: &str) -> Rc<AST> {
                 let molecule = AST::Hydride(hydride).into();
                 state.stack.push(StackItem::Molecule(molecule));
             }
-            Token::Base(base) => {
-                let molecule = AST::Base(base).into();
-                state.stack.push(StackItem::Molecule(molecule));
-            }
-            Token::Prefix(base) => {
-                let base = AST::Base(base).into();
-                let group = AST::Group(base).into();
+            Token::Prefix(group) => {
+                let group = AST::CharacteristicGroup(group).into();
                 state.stack.push(StackItem::Molecule(group));
             }
-            Token::Suffix(base) => {
-                let base = AST::Base(base).into();
-                let group: Rc<_> = AST::Group(base).into();
+            Token::Suffix(group) => {
+                let group: Rc<_> = AST::CharacteristicGroup(group).into();
 
                 let positions = state.pop_multiplicity_and_positions().collect::<Vec<_>>();
                 let mut molecule = state.pop_molecule();
@@ -180,17 +176,20 @@ impl State {
 #[cfg(test)]
 mod tests {
     use crate::{
-        chapters::p_2_hydrides::{
-            p_21_simple_hydrides::{
-                p_21_1_mononuclear_hydrides::METHANE,
-                p_21_2_acyclic_hydrides::{alkane, BUTANE, ETHANE, PROPANE},
+        chapters::{
+            p_2_hydrides::{
+                p_21_simple_hydrides::{
+                    p_21_1_mononuclear_hydrides::METHANE,
+                    p_21_2_acyclic_hydrides::{alkane, BUTANE, ETHANE, PROPANE},
+                },
+                p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
+                p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
+                Hydride::Isobutane,
             },
-            p_22_monocyclic_hydrides::p_22_1_monocyclic_hydocarbons::MonocyclicHydrocarbon::Benzene,
-            p_25_fused_ring_systems::p_25_2_heterocyclic_ring_components::HeterocyclicRing::Purine,
-            Hydride::Isobutane,
+            p_3_substituent_groups::CharacteristicGroup,
         },
         test::{ADENINE, CAFFEINE, CYTOSINE, DOPAMINE, GUANINE, SALBUTAMOL, THYMINE},
-        Base, Locant,
+        Locant,
     };
 
     use super::{parse, AST};
@@ -266,16 +265,16 @@ mod tests {
             parse(DOPAMINE),
             AST::Substitution(
                 Locant::Number(1),
-                AST::Group(AST::Base(Base::Water).into()).into(),
+                AST::CharacteristicGroup(CharacteristicGroup::Hydroxy).into(),
                 AST::Substitution(
                     Locant::Number(2),
-                    AST::Group(AST::Base(Base::Water).into()).into(),
+                    AST::CharacteristicGroup(CharacteristicGroup::Hydroxy).into(),
                     AST::Substitution(
                         Locant::Number(4),
                         AST::Group(
                             AST::Substitution(
                                 Locant::Number(2),
-                                AST::Group(AST::Base(Base::Ammonia).into()).into(),
+                                AST::CharacteristicGroup(CharacteristicGroup::Amino).into(),
                                 AST::Hydride(ETHANE.into()).into(),
                             )
                             .into(),
@@ -294,7 +293,7 @@ mod tests {
             parse(SALBUTAMOL),
             AST::Substitution(
                 Locant::Unspecified,
-                AST::Group(AST::Base(Base::Water).into()).into(),
+                AST::CharacteristicGroup(CharacteristicGroup::Hydroxy).into(),
                 AST::Substitution(
                     Locant::Number(4),
                     // 2-(tert-Butylamino)-1-hydroxyethyl
@@ -305,13 +304,13 @@ mod tests {
                             AST::Substitution(
                                 Locant::Unspecified,
                                 AST::Group(AST::Hydride(Isobutane).into()).into(),
-                                AST::Group(AST::Base(Base::Ammonia).into()).into(),
+                                AST::CharacteristicGroup(CharacteristicGroup::Amino).into(),
                             )
                             .into(),
                             // 1-Hydroxyethane
                             AST::Substitution(
                                 Locant::Number(1),
-                                AST::Group(AST::Base(Base::Water).into()).into(),
+                                AST::CharacteristicGroup(CharacteristicGroup::Hydroxy).into(),
                                 AST::Hydride(ETHANE.into()).into(),
                             )
                             .into(),
@@ -326,7 +325,7 @@ mod tests {
                             // Hydroxymethane
                             AST::Substitution(
                                 Locant::Unspecified,
-                                AST::Group(AST::Base(Base::Water).into()).into(),
+                                AST::CharacteristicGroup(CharacteristicGroup::Hydroxy).into(),
                                 AST::Hydride(METHANE.into()).into(),
                             )
                             .into(),
@@ -345,10 +344,10 @@ mod tests {
             parse(CAFFEINE),
             AST::Substitution(
                 Locant::Number(2),
-                AST::Group(AST::Base(Base::Oxygen).into()).into(),
+                AST::CharacteristicGroup(CharacteristicGroup::Oxo).into(),
                 AST::Substitution(
                     Locant::Number(6),
-                    AST::Group(AST::Base(Base::Oxygen).into()).into(),
+                    AST::CharacteristicGroup(CharacteristicGroup::Oxo).into(),
                     // 1,3,7-Trimethyl-3,7-dihydro-1H-purine
                     AST::Substitution(
                         Locant::Number(1),
@@ -362,10 +361,10 @@ mod tests {
                                 // 3,7-Dihydro-1H-purine
                                 AST::Substitution(
                                     Locant::Number(3),
-                                    AST::Group(AST::Base(Base::Hydrogen).into()).into(),
+                                    AST::CharacteristicGroup(CharacteristicGroup::Hydro).into(),
                                     AST::Substitution(
                                         Locant::Number(7),
-                                        AST::Group(AST::Base(Base::Hydrogen).into()).into(),
+                                        AST::CharacteristicGroup(CharacteristicGroup::Hydro).into(),
                                         // 1H-Purine
                                         AST::Hydride(Purine(1).into()).into(),
                                     )

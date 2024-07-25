@@ -4,8 +4,6 @@ use petgraph::graph::UnGraph;
 
 use crate::{parser::AST, Element, Locant};
 
-mod bases;
-
 #[derive(Debug, Default, Clone)]
 pub struct Graph {
     pub atoms: Vec<Element>,
@@ -18,12 +16,11 @@ impl From<&AST> for Graph {
     fn from(value: &AST) -> Self {
         match value {
             AST::Hydride(hydride) => hydride.to_graph(),
-            AST::Base(base) => bases::base(base),
-
             AST::Group(base) => {
                 let base = Graph::from(&**base);
                 free_valence(base)
             }
+            AST::CharacteristicGroup(group) => group.to_graph(),
             &AST::Unsaturated(n, ref base) => {
                 let base = Graph::from(&**base);
                 unsaturate(n as usize, base)
